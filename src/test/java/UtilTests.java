@@ -48,16 +48,18 @@ public class UtilTests {
 
     @Test
     public void testUniqueCount(){
-        int[] values = {0, 1, 2, 0, 0, 3, 0};
+        int[] values = {-1, 1, 2, -1, -1, 3, -1};
         int uniqueCount = Util.uniqueCount(values);
         Assert.assertEquals(4, uniqueCount);
     }
 
 
     @Test
-    public void testZeroCount(){
+    public void testValueCount(){
         int[] values = {0, 1, 2, 0, 0, 3, 0};
-        int zeroCount = Util.zeroCount(values);
-        Assert.assertEquals(4, zeroCount);
+        int countZero = Util.count(0, values);
+        int countTwo = Util.count(2, values);
+        Assert.assertEquals(4, countZero);
+        Assert.assertEquals(1, countTwo);
     }
 }

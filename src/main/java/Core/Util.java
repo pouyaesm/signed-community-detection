@@ -18,19 +18,37 @@ public class Util {
     }
 
     /**
+     * Minimum of an integer in all given arrays
+     * @param arrays
+     * @return
+     */
+    public synchronized static int min(int[]...arrays) {
+        int min = Integer.MAX_VALUE;
+        for(int[] array : arrays)
+            for (int value : array) {
+                if (value < min) {
+                    min = value;
+                }
+            }
+        return min;
+    }
+
+    /**
      * Number of unique values in all arrays
      * @param values
      * @return
      */
     public synchronized static int uniqueCount(int[]...values){
-        boolean[] visitedValues = new boolean[Util.max(values) + 1];
+        int minValue = Util.min(values);
+        int maxValue = Util.max(values);
+        boolean[] visitedValues = new boolean[maxValue - minValue + 1];
         int uniqueCount = 0;
         for(int a = 0 ; a < values.length ; a++) {
             for (int i = 0; i < values[a].length; i++) {
-                int value = values[a][i];
-                if (!visitedValues[value]) {
+                int adjustedValue = values[a][i] - minValue;
+                if (!visitedValues[adjustedValue]) {
                     uniqueCount++;
-                    visitedValues[value] = true;
+                    visitedValues[adjustedValue] = true;
                 }
             }
         }
@@ -49,11 +67,11 @@ public class Util {
      * @param arrays
      * @return
      */
-    public synchronized static int zeroCount(int[]...arrays) {
+    public synchronized static int count(int valueToCount, int[]...arrays) {
         int count = 0;
         for(int[] array : arrays) {
             for (int value : array) {
-                if (value == 0) {
+                if (valueToCount == value) {
                     count++;
                 }
             }
@@ -61,10 +79,10 @@ public class Util {
         return count;
     }
 
-    public synchronized static int zeroCount(int[] values) {
+    public synchronized static int count(int valueToCount, int[] values) {
         int[][] arrays = new int[1][];
         arrays[0] = values;
-        return zeroCount(arrays);
+        return count(valueToCount, arrays);
     }
 
     /**
@@ -76,6 +94,30 @@ public class Util {
         int[][] idsArray = new int[1][ids.length];
         idsArray[0] = ids;
         return normalizeIds(idsArray);
+    }
+
+    /**
+     * Check if arrays contain the value
+     * @param value value to search
+     * @param arrays arrays to search among them
+     * @return
+     */
+    public synchronized static boolean contains(int value, int[]...arrays) {
+        int count = 0;
+        for(int[] array : arrays) {
+            for (int v : array) {
+                if (value == v) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public synchronized static boolean contains(int value, int[] values) {
+        int[][] arrays = new int[1][];
+        arrays[0] = values;
+        return contains(value, arrays);
     }
 
     /**

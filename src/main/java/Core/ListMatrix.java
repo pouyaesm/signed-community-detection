@@ -15,7 +15,7 @@ public class ListMatrix {
      */
     protected int[][] toNormal;
     /**
-     * Maps normalized id to raw id
+     * Maps normalized id to a raw id
      * toRaw[0] is for rows and toRow[1] is for columns
      */
     protected int[][] toRaw;
@@ -33,6 +33,16 @@ public class ListMatrix {
      * true if row and column are representative of the same entity
      */
     private boolean isIdShared;
+
+    /**
+     * Mode used for sorting the List
+     */
+    private int sortMode;
+
+    /**
+     * Are row and column ids are increasing (ascending) or not
+     */
+    private boolean isIdAscending;
 
     /**
      * True of row indices are sorted, and column indices are sorted per row
@@ -82,11 +92,11 @@ public class ListMatrix {
      * Return a ListMatrix sorted first by row id and then by column id,
      * with optional removal of duplicate (row, column)s
      * @param isIdAscending
-     * @param mode remove duplicates or not clone the list matrix
+     * @param sortMode remove duplicates or not clone the list matrix
      * @return
      */
-    public ListMatrix sort(boolean isIdAscending, int mode){
-        boolean clone = mode == MODE_CLONE || mode == MODE_REMOVE_DUPLICATE;
+    public ListMatrix sort(boolean isIdAscending, int sortMode){
+        boolean clone = sortMode == MODE_CLONE || sortMode == MODE_REMOVE_DUPLICATE;
         // first sort the rows, then sort columns per row
         QuickSort qSortRow = new QuickSort();
         int[] rows = qSortRow.sort(getRows(), !isIdAscending, clone);
@@ -116,13 +126,13 @@ public class ListMatrix {
             }
         }
         boolean isUnique = duplication == 0;
-        if(isUnique || mode != MODE_REMOVE_DUPLICATE){
+        if(isUnique || sortMode != MODE_REMOVE_DUPLICATE){
             if(clone){
                 ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
-                        .setStatus(true, isUnique, isNormalized());
+                        .setStatus(true, isUnique, isNormalized(), isIdAscending, sortMode);
                 return listMatrix;
             }else{
-                setStatus(true, isUnique, isNormalized());
+                setStatus(true, isUnique, isNormalized(), isIdAscending, sortMode);
                 return this;
             }
         }
@@ -144,10 +154,9 @@ public class ListMatrix {
             uniqueIndex++;
         }
         ListMatrix listMatrix = new ListMatrix().init(uRows, uColumns, uValues, isIdShared())
-                .setStatus(true, true, isNormalized());
+                .setStatus(true, true, isNormalized(), isIdAscending(), getSortMode());
         return listMatrix;
     }
-
 
     /**
      * Normalize the row and column ids to 0...L-1 without missing values
@@ -191,19 +200,233 @@ public class ListMatrix {
         if(clone){
             return new ListMatrix().init(rows, columns, getValues().clone(), isIdShared())
                     .setMaps(toNormal, toRaw)
-                    .setStatus(isSorted(), isUnique(), true);
+                    .setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
         }else{
             setMaps(toNormal, toRaw);
-            setStatus(isSorted(), isUnique(), true);
+            setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
             return this;
         }
     }
 
-    protected ListMatrix setStatus(boolean isSorted, boolean isUnique, boolean isNormalized){
+    /**
+     * Normalize the row and column ids to 0...L-1 without missing values
+     * Also map the normalized ids back to existing raw ids (if any) before normalization,
+     * This is useful for hierarchical matrices which shared raw ids
+     * @param clone
+     * @param keepOldRawIds
+     * @return
+     */
+    public ListMatrix normalize(boolean clone, boolean keepOldRawIds){
+        int[][] oldRawIds = getToRaw();
+        ListMatrix normalizedList = normalize(clone);
+        if(oldRawIds == null || !keepOldRawIds){
+            return normalizedList;
+        }
+        // Example: [3, 4, 5] -> [0, 1, 2], [1, 2] -> [0, 1]
+        // We want to map [0, 1] back to [4, 5] instead of [1, 2]
+        int[][] newRawIds = normalizedList.getToRaw();
+        for(int dim = 0 ; dim < 2 ; dim++){
+            for(int normalizedId = 0 ; normalizedId < newRawIds[dim].length ; normalizedId++){
+                int newRawId = newRawIds[dim][normalizedId];
+                newRawIds[dim][normalizedId] = oldRawIds[dim][newRawId];
+            }
+        }
+        return normalizedList;
+    }
+
+    /**
+     * Un-normalize a list into previous un-normalized state
+     * @param clone
+     * @return
+     */
+    public ListMatrix unNormalize(boolean clone){
+        if(!isNormalized()){
+            try {
+                throw new Exception("ListMatrix was not normalized before");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+        int[] uRows = clone ? new int[rows.length] : rows;
+        int[] uColumns = clone ? new int[columns.length] : columns;
+        int forRow = 0, forColumn = 1;
+        for(int p = 0 ; p < rows.length ; p++){
+            uRows[p] = toRaw[forRow][rows[p]];
+            uColumns[p] = toRaw[forColumn][columns[p]];
+        }
+        ListMatrix unNormalizedList = clone ? new ListMatrix() : this;
+        if(clone){
+            unNormalizedList.init(uRows, uColumns, getValues().clone(), isIdShared());
+        }else{
+            setMaps(null, null); // remove the normalization maps
+        }
+        // unNormalization could break the id order if the list was normalized before being sorted
+        unNormalizedList.setStatus(false, isUnique(), false, isIdAscending(), getSortMode());
+        return unNormalizedList;
+    }
+
+    /**
+     * Transpose the matrix list by switching rows with columns
+     * @param clone
+     * @return
+     */
+    public ListMatrix transpose(boolean clone){
+        int[] tRows = clone ? new int[rows.length] : columns;
+        int[] tColumns = clone ? new int[rows.length] : rows;
+        ListMatrix transposedList;
+        if(clone) {
+            for (int p = 0; p < rows.length; p++) {
+                tRows[p] = columns[p];
+                tColumns[p] = rows[p];
+            }
+            transposedList = new ListMatrix()
+                    .init(tRows, tColumns, getValues().clone(), isIdShared());
+        }else{
+            transposedList = this;
+            rows = tRows;
+            columns = tColumns;
+            int rowCountTemp = getRowCount();
+            rowCount = getColumnCount();
+            columnCount = rowCountTemp;
+        }
+        // resort the rows and columns since they are swapped
+        if(isSorted()){
+            transposedList.sort(isIdAscending(), getSortMode());
+        }
+        // swap toNormal and toRaw id maps between row and column
+        if(isNormalized()){
+            int forRow = 0, forColumn = 1;
+            int[] toNormalRowTemp = getToNormal()[forRow];
+            int[] toRawRowTemp = getToRaw()[forRow];
+            transposedList.toNormal = new int[2][];
+            transposedList.toRaw = new int[2][];
+            transposedList.toNormal[forRow] = getToNormal()[forColumn];
+            transposedList.toNormal[forColumn] = toNormalRowTemp;
+            transposedList.toRaw[forRow] = getToRaw()[forColumn];
+            transposedList.toRaw[forColumn] = toRawRowTemp;
+        }
+        transposedList.setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
+        return transposedList;
+    }
+
+    /**
+     * Decompose the list into K lists partitioned by the input,
+     * negative partitions are regarded as discarding the corresponding row or column,
+     * partitions are assumed to be normalized into 0...K-1,
+     * Of course pairs between different partitions will be ignored
+     * @param partitions partitions[i] = k means placing i-th row and in list k
+     * @return
+     */
+    public ListMatrix[] decompose(int[] partitions){
+        int[] allRows = getRows();
+        int[] allColumns = getColumns();
+        float[] allValues = getValues();
+        // Find partition count and initialize partition size
+        // when an entry is discarded, partition "-1" exists in the input and must be excluded
+        int hasDiscarded = Util.contains(-1, partitions) ? 1 : 0;
+        int partitionCount = Util.uniqueCount(partitions) - hasDiscarded;
+        int[] partitionsSize = new int[partitionCount];
+        // Calculate number of pairs per partition
+        for(int p = 0 ; p < allRows.length ; p++){
+            int partition = partitions[allRows[p]];
+            // Some rows/columns can be discarded with partition = -1
+            // To include a pair, both ends must reside in the same partition
+            if(partition >= 0 && partition == partitions[allColumns[p]]) {
+                partitionsSize[partition]++;
+            }
+        }
+
+        // Instantiate lists per dimension per partition
+        int[][] rows = new int[partitionCount][];
+        int[][] columns = new int[partitionCount][];
+        float[][] values = new float[partitionCount][];
+        int[] occupied = new int[partitionCount]; // No. pairs occupying positions per partition
+        for(int pr = 0 ; pr < partitionCount ; pr++){
+            int partitionSize = partitionsSize[pr];
+            if(partitionSize > 0) {
+                rows[pr] = new int[partitionSize];
+                columns[pr] = new int[partitionSize];
+                values[pr] = new float[partitionSize];
+            }
+        }
+        // Fill in lists with row column indices
+        for(int p = 0 ; p < allRows.length ; p++){
+            int row = allRows[p];
+            int column = allColumns[p];
+            int partition = partitions[row];
+            if(partition >= 0 && partition == partitions[column]){
+                int pos = occupied[partition];
+                rows[partition][pos] = row;
+                columns[partition][pos] = column;
+                values[partition][pos] = allValues[p];
+                occupied[partition]++;
+            }
+        }
+        // Decomposition of a sorted/unique/ascending list remains sorted/unique/ascending
+        // Normal/Row mappings remain the same after decomposition, so they are set for all
+        // partitions as a SHARED resource
+        ListMatrix[] lists = new ListMatrix[partitionCount];
+        for(int pr = 0 ; pr < rows.length ; pr++){
+            lists[pr] = new ListMatrix()
+                    .init(rows[pr], columns[pr], values[pr], isIdShared())
+                    .setStatus(isSorted(), isUnique(), false, isIdAscending(), getSortMode())
+                    .setMaps(getToNormal(), getToRaw()); // shared maps
+        }
+        return lists;
+    }
+
+//    /**
+//     * Decompose the list into K lists partitioned by the input
+//     * @param partition partition[i] = k means placing i-th row and column in list k
+//     * @return
+//     */
+//    public ListMatrix[] decompose(int[] partition){
+//        int[][] partitions = new int[2][];
+//        partitions[0] = partitions[1] = partition;
+//        return decompose(partitions);
+//    }
+
+    protected ListMatrix setStatus(boolean isSorted, boolean isUnique
+            , boolean isNormalized, boolean isIdAscending, int sortMode){
         this.isSorted = isSorted;
         this.isUnique = isUnique;
         this.isNormalized = isNormalized;
+        this.isIdAscending = isIdAscending;
+        this.sortMode = sortMode;
         return this;
+    }
+
+    /**
+     * Default sort as ascending and remove duplicates (+ clone)
+     * @return
+     */
+    public ListMatrix sort(){
+        return sort(true, MODE_REMOVE_DUPLICATE);
+    }
+
+    /**
+     * Default normalization without cloning
+     * @return
+     */
+    public ListMatrix normalize(){
+        return normalize(false);
+    }
+
+    /**
+     * Default unNormalization without cloning
+     * @return
+     */
+    public ListMatrix unNormalize(){
+        return unNormalize(false);
+    }
+
+    /**
+     * Default transpose without cloning
+     * @return
+     */
+    public ListMatrix transpose(){
+        return transpose(false);
     }
 
     @Override
@@ -212,7 +435,7 @@ public class ListMatrix {
         int[] columns = getColumns().clone();
         float[] values = getValues().clone();
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
-                .setStatus(isSorted(), isUnique(), isNormalized());
+                .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         listMatrix.toRaw = new int[2][];
         listMatrix.toNormal = new int[2][];
         for(int dim = 0 ; dim < 2 ; dim++){
@@ -282,6 +505,14 @@ public class ListMatrix {
 
     public boolean isIdShared() {
         return isIdShared;
+    }
+
+    public boolean isIdAscending() {
+        return isIdAscending;
+    }
+
+    public int getSortMode() {
+        return sortMode;
     }
 
     public int[][] getToNormal() {

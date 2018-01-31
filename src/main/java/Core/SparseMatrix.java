@@ -78,6 +78,7 @@ public class SparseMatrix {
         return this;
     }
 
+
     public float getValue(int row, int column){
         int rowId = listMatrix.getToNormal()[0][row];
         int columnId = listMatrix.getToNormal()[1][column];
@@ -88,6 +89,23 @@ public class SparseMatrix {
             }
         }
         return Integer.MIN_VALUE; // not found
+    }
+
+    /**
+     * Transpose the sparse matrix
+     * @return
+     */
+    public SparseMatrix transpose(boolean clone){
+        ListMatrix transposedList = getListMatrix().transpose(clone);
+        return clone ? new SparseMatrix(transposedList) : init(transposedList);
+    }
+
+    /**
+     * Transpose the sparse matrix with cloning as default
+     * @return
+     */
+    public SparseMatrix transpose(){
+        return transpose(true);
     }
 
     /**
@@ -107,5 +125,19 @@ public class SparseMatrix {
 
     public ListMatrix getListMatrix() {
         return listMatrix;
+    }
+
+    @Override
+    public Object clone(){
+        SparseMatrix clone = new SparseMatrix();
+        clone.listMatrix = (ListMatrix) getListMatrix().clone();
+        clone.rowSizes = rowSizes.clone();
+        clone.values = new float[values.length][];
+        clone.columnIndices = new int[values.length][];
+        for(int r = 0 ; r < values.length ; r++){
+            clone.values[r] = values[r].clone();
+            clone.columnIndices[r] = columnIndices[r].clone();
+        }
+        return clone;
     }
 }

@@ -2,9 +2,10 @@ package Core;
 
 public class ListMatrix {
 
-    public static final int MODE_REMOVE_DUPLICATE = 1;
-    public static final int MODE_NOT_CLONE = 2;
-    public static final int MODE_CLONE = 3;
+    public static final int MODE_REMOVE_DUPLICATE = 1; // 0001
+    public static final int MODE_AGGREGATE_DUPLICATE = 3; // 0011
+    public static final int MODE_NOT_CLONE = 4; // 0100
+    public static final int MODE_CLONE = 8; // 1000
 
     private int[] rows;
     private int[] columns;
@@ -96,20 +97,20 @@ public class ListMatrix {
      * @return
      */
     public ListMatrix sort(boolean isIdAscending, int sortMode){
-        boolean clone = sortMode == MODE_CLONE || sortMode == MODE_REMOVE_DUPLICATE;
+        boolean clone = sortMode == MODE_CLONE ||
+                (sortMode & MODE_REMOVE_DUPLICATE) != 0;
         // first sort the rows, then sort columns per row
         QuickSort qSortRow = new QuickSort();
         int[] rows = qSortRow.sort(getRows(), !isIdAscending, clone);
         int[] columns = qSortRow.permute(getColumns(), clone);
         float[] values = qSortRow.permute(getValues(), clone);
         // sort columns per row
-        int start = 0;
-        int currentRowId = rows[start];
         // traverse the sorted rows to sort the columns per row
         QuickSort qSortColumn = new QuickSort();
         int duplication = 0;
-        for(int p = 1; p < rows.length; p++){
-            if(currentRowId != rows[p]){
+        for(int start = 0, currentRowId = rows[start], p = 1; p < rows.length + 1; p++){
+            boolean isRowChanged = p == rows.length || currentRowId != rows[p];
+            if(isRowChanged){
                 // sort columns of currentRowId that has just been traversed
                 qSortColumn.sort(columns, start, p - 1, !isIdAscending, false);
                 // apply the permutation on rows and values too
@@ -122,11 +123,11 @@ public class ListMatrix {
                     }
                 }
                 start = p;
-                currentRowId = rows[p];
+                currentRowId = p < rows.length ? rows[p] : -1;
             }
         }
         boolean isUnique = duplication == 0;
-        if(isUnique || sortMode != MODE_REMOVE_DUPLICATE){
+        if(isUnique || (sortMode & MODE_REMOVE_DUPLICATE) == 0){
             if(clone){
                 ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
                         .setStatus(true, isUnique, isNormalized(), isIdAscending, sortMode);
@@ -136,7 +137,7 @@ public class ListMatrix {
                 return this;
             }
         }
-        // remove the duplicated pair
+        // remove/aggregate the duplicated pair
         int uniqueCount = rows.length - duplication;
         int[] uRows = new int[uniqueCount];
         int[] uColumns = new int[uniqueCount];
@@ -146,6 +147,10 @@ public class ListMatrix {
             int row = rows[p];
             int column = columns[p];
             if(p > 0 && row == rows[p - 1] && column == columns[p - 1]){
+                if(sortMode == MODE_AGGREGATE_DUPLICATE){
+                    // aggregate the duplicate value with corresponding values
+                    uValues[uniqueIndex - 1] += values[p];
+                }
                 continue; // pair is a duplicate
             }
             uRows[uniqueIndex] = rows[p];
@@ -315,58 +320,45 @@ public class ListMatrix {
      * negative partitions are regarded as discarding the corresponding row or column,
      * partitions are assumed to be normalized into 0...K-1,
      * Of course pairs between different partitions will be ignored
-     * @param partitions partitions[i] = k means placing i-th row and in list k
+     * @param partition partitions[i] = k means placing i-th row and in list k
      * @return
      */
-    public ListMatrix[] decompose(int[] partitions){
+    public ListMatrix[] decompose(int[] partition){
+        PartitionStatistics statistics = new MatrixStatistics().partitionStatistics(partition, this);
         int[] allRows = getRows();
         int[] allColumns = getColumns();
         float[] allValues = getValues();
-        // Find partition count and initialize partition size
-        // when an entry is discarded, partition "-1" exists in the input and must be excluded
-        int hasDiscarded = Util.contains(-1, partitions) ? 1 : 0;
-        int partitionCount = Util.uniqueCount(partitions) - hasDiscarded;
-        int[] partitionsSize = new int[partitionCount];
-        // Calculate number of pairs per partition
-        for(int p = 0 ; p < allRows.length ; p++){
-            int partition = partitions[allRows[p]];
-            // Some rows/columns can be discarded with partition = -1
-            // To include a pair, both ends must reside in the same partition
-            if(partition >= 0 && partition == partitions[allColumns[p]]) {
-                partitionsSize[partition]++;
-            }
-        }
-
-        // Instantiate lists per dimension per partition
-        int[][] rows = new int[partitionCount][];
-        int[][] columns = new int[partitionCount][];
-        float[][] values = new float[partitionCount][];
-        int[] occupied = new int[partitionCount]; // No. pairs occupying positions per partition
-        for(int pr = 0 ; pr < partitionCount ; pr++){
-            int partitionSize = partitionsSize[pr];
-            if(partitionSize > 0) {
-                rows[pr] = new int[partitionSize];
-                columns[pr] = new int[partitionSize];
-                values[pr] = new float[partitionSize];
+        int groupCount = statistics.groupCount;
+        // Instantiate lists per dimension per partitions
+        int[][] rows = new int[groupCount][];
+        int[][] columns = new int[groupCount][];
+        float[][] values = new float[groupCount][];
+        int[] occupied = new int[groupCount]; // No. pairs occupying positions per partitions
+        for(int pr = 0 ; pr < groupCount ; pr++){
+            int groupSize = statistics.groupSizes[pr];
+            if(groupSize > 0) {
+                rows[pr] = new int[groupSize];
+                columns[pr] = new int[groupSize];
+                values[pr] = new float[groupSize];
             }
         }
         // Fill in lists with row column indices
         for(int p = 0 ; p < allRows.length ; p++){
             int row = allRows[p];
             int column = allColumns[p];
-            int partition = partitions[row];
-            if(partition >= 0 && partition == partitions[column]){
-                int pos = occupied[partition];
-                rows[partition][pos] = row;
-                columns[partition][pos] = column;
-                values[partition][pos] = allValues[p];
-                occupied[partition]++;
+            int groupId = partition[row];
+            if(groupId >= 0 && groupId == partition[column]){
+                int pos = occupied[groupId];
+                rows[groupId][pos] = row;
+                columns[groupId][pos] = column;
+                values[groupId][pos] = allValues[p];
+                occupied[groupId]++;
             }
         }
         // Decomposition of a sorted/unique/ascending list remains sorted/unique/ascending
         // Normal/Row mappings remain the same after decomposition, so they are set for all
         // partitions as a SHARED resource
-        ListMatrix[] lists = new ListMatrix[partitionCount];
+        ListMatrix[] lists = new ListMatrix[groupCount];
         for(int pr = 0 ; pr < rows.length ; pr++){
             lists[pr] = new ListMatrix()
                     .init(rows[pr], columns[pr], values[pr], isIdShared())
@@ -376,14 +368,48 @@ public class ListMatrix {
         return lists;
     }
 
+    /**
+     * Fold the rows/columns and their pairs inside each partition,
+     * Values are aggregated inside a partition or between two partitions,
+     * GroupIds are assumed to be normalized to 0...K-1
+     * @param partition partitions[i] = k means placing i-th row and column in list k
+     * @return
+     */
+    public ListMatrix fold(int[] partition) {
+        int[] allRows = getRows();
+        int[] allColumns = getColumns();
+        float[] allValues = getValues();
+        PartitionStatistics statistics = new MatrixStatistics().partitionStatistics(partition, this);
+        // number of pairs with no discarded row/column
+        int validPairs = allRows.length - statistics.discardedCount;
+        int[] rows = new int[validPairs];
+        int[] columns = new int[validPairs];
+        float[] values = new float[validPairs];
+        int insertAt = 0;
+        for(int p = 0 ; p < allRows.length ; p++){
+            int rowGroupId = partition[allRows[p]];
+            int columnGroupId = partition[allColumns[p]];
+            if(rowGroupId < 0 || columnGroupId < 0){
+                continue; // pair is discarded by the partition
+            }
+            rows[insertAt] = rowGroupId;
+            columns[insertAt] = columnGroupId;
+            values[insertAt] = allValues[p];
+            insertAt++;
+        }
+        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
+                .sort(isIdAscending(), MODE_AGGREGATE_DUPLICATE)
+                .setStatus(true, true, true, isIdAscending(), MODE_AGGREGATE_DUPLICATE);
+        return foldedMatrix;
+    }
 //    /**
 //     * Decompose the list into K lists partitioned by the input
-//     * @param partition partition[i] = k means placing i-th row and column in list k
+//     * @param partitions partitions[i] = k means placing i-th row and column in list k
 //     * @return
 //     */
-//    public ListMatrix[] decompose(int[] partition){
+//    public ListMatrix[] decompose(int[] partitions){
 //        int[][] partitions = new int[2][];
-//        partitions[0] = partitions[1] = partition;
+//        partitions[0] = partitions[1] = partitions;
 //        return decompose(partitions);
 //    }
 
@@ -530,4 +556,6 @@ public class ListMatrix {
     public int getRowCount() {
         return rowCount;
     }
+
+
 }

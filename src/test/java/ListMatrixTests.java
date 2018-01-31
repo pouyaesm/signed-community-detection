@@ -7,15 +7,16 @@ public class ListMatrixTests {
 
     @Test
     public void testListMatrixSortUniquely(){
-        int[] rows = {      1,  2,      2,      1000,   30, 30};
-        int[] columns = {   10, 300,    100,    5,      20, 20};
-        float[] values = {  1,  2,      3,      4,      5,  5};
+        int[] rows = {      1,  2,      2,      1000,   30, 30, 5,  5};
+        int[] columns = {   10, 300,    100,    5,      20, 20, 6,  3};
+        float[] values = {  1,  2,      3,      4,      5,  5,  3,  2};
         ListMatrix uniqueList = new ListMatrix().init(rows, columns, values, true)
-                .sort(true, ListMatrix.MODE_REMOVE_DUPLICATE);
+                .sort(true, ListMatrix.MODE_AGGREGATE_DUPLICATE);
 
-        int[] expectedRows = {      1,  2,      2,      30,     1000};
-        int[] expectedColumns = {   10, 100,    300,    20,     5};
-        float[] expectedValues = {  1,  3,      2,      5,      4};
+        int[] expectedRows = {      1,  2,      2,      5,      5,  30,     1000};
+        int[] expectedColumns = {   10, 100,    300,    3,      6,  20,     5};
+        // (30, 20) values must be aggregated to 10
+        float[] expectedValues = {  1,  3,      2,      2,      3,  10,      4};
 
         Assert.assertArrayEquals("rows must be sorted", expectedRows, uniqueList.getRows());
         Assert.assertArrayEquals("columns must be sorted per row", expectedColumns, uniqueList.getColumns());
@@ -84,5 +85,20 @@ public class ListMatrixTests {
         Assert.assertArrayEquals(new int[]{2}, matrices[0].getColumns());
         Assert.assertArrayEquals(new int[]{4}, matrices[1].getRows());
         Assert.assertArrayEquals(new int[]{5}, matrices[1].getColumns());
+    }
+
+    /**
+     * Test folding the matrix rows/columns into their corresponding partitions
+     */
+    public void testListMatrixFold(){
+        int[] rows = {      1,  1,  4,  6};
+        int[] columns = {   2,  4,  5,  6};
+        float[] values = {  1,  3,  4,  4};
+        int[] partitions = {-1, 0, 1, -1, 0, 1, -1}; // partition into {1, 4} and {2, 5}, discard {6}
+        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, true).fold(partitions);
+        Assert.assertArrayEquals(new int[]{0, 0}, foldedMatrix.getRows());
+        Assert.assertArrayEquals(new int[]{0, 1}, foldedMatrix.getColumns());
+        Assert.assertArrayEquals("Intra- or Inter-Group values must be aggregated",
+                new float[]{3, 5}, foldedMatrix.getValues(), 0.0001f);
     }
 }

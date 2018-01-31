@@ -90,15 +90,18 @@ public class ListMatrixTests {
     /**
      * Test folding the matrix rows/columns into their corresponding partitions
      */
+    @Test
     public void testListMatrixFold(){
         int[] rows = {      1,  1,  4,  6};
         int[] columns = {   2,  4,  5,  6};
         float[] values = {  1,  3,  4,  4};
         int[] partitions = {-1, 0, 1, -1, 0, 1, -1}; // partition into {1, 4} and {2, 5}, discard {6}
         ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, true).fold(partitions);
+        System.out.println(foldedMatrix.toString());
+        // folded matrix ids are sorted descending by default since the original matrix is not sorted
         Assert.assertArrayEquals(new int[]{0, 0}, foldedMatrix.getRows());
-        Assert.assertArrayEquals(new int[]{0, 1}, foldedMatrix.getColumns());
+        Assert.assertArrayEquals(new int[]{1, 0}, foldedMatrix.getColumns());
         Assert.assertArrayEquals("Intra- or Inter-Group values must be aggregated",
-                new float[]{3, 5}, foldedMatrix.getValues(), 0.0001f);
+                new float[]{5, 3}, foldedMatrix.getValues(), 0.0001f);
     }
 }

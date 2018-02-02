@@ -6,7 +6,7 @@ public class Util {
      * @param arrays
      * @return
      */
-    public synchronized static int max(int[]...arrays) {
+    public static int max(int[]...arrays) {
         int max = Integer.MIN_VALUE;
         for(int[] array : arrays)
         for (int value : array) {
@@ -22,7 +22,7 @@ public class Util {
      * @param arrays
      * @return
      */
-    public synchronized static int min(int[]...arrays) {
+    public static int min(int[]...arrays) {
         int min = Integer.MAX_VALUE;
         for(int[] array : arrays)
             for (int value : array) {
@@ -38,15 +38,13 @@ public class Util {
      * @param values
      * @return
      */
-    public synchronized static int uniqueCount(int[]...values){
-        int minValue = Util.min(values);
-        int maxValue = Util.max(values);
-        boolean[] visitedValues = new boolean[maxValue - minValue + 1];
+    public static int uniqueCount(int discardedValue, int valueOffset, int size, int[]...values){
+        boolean[] visitedValues = new boolean[size];
         int uniqueCount = 0;
         for(int a = 0 ; a < values.length ; a++) {
             for (int i = 0; i < values[a].length; i++) {
-                int adjustedValue = values[a][i] - minValue;
-                if (!visitedValues[adjustedValue]) {
+                int adjustedValue = values[a][i] + valueOffset;
+                if (!visitedValues[adjustedValue] && adjustedValue != discardedValue) {
                     uniqueCount++;
                     visitedValues[adjustedValue] = true;
                 }
@@ -55,7 +53,13 @@ public class Util {
         return uniqueCount;
     }
 
-    public synchronized static int uniqueCount(int[] values){
+    public static int uniqueCount(int[]...values) {
+        int minValue = Util.min(values);
+        int maxValue = Util.max(values);
+        return uniqueCount(Integer.MIN_VALUE,  - minValue, maxValue - minValue + 1, values);
+    }
+
+    public static int uniqueCount(int[] values){
         int[][] arrays = new int[1][];
         arrays[0] = values;
         return uniqueCount(arrays);
@@ -67,7 +71,7 @@ public class Util {
      * @param arrays
      * @return
      */
-    public synchronized static int count(int valueToCount, int[]...arrays) {
+    public static int count(int valueToCount, int[]...arrays) {
         int count = 0;
         for(int[] array : arrays) {
             for (int value : array) {
@@ -79,7 +83,7 @@ public class Util {
         return count;
     }
 
-    public synchronized static int count(int valueToCount, int[] values) {
+    public static int count(int valueToCount, int[] values) {
         int[][] arrays = new int[1][];
         arrays[0] = values;
         return count(valueToCount, arrays);
@@ -90,7 +94,7 @@ public class Util {
      * @param ids
      * @return
      */
-    public synchronized static int[] normalizeIds(int[] ids) {
+    public static int[] normalizeIds(int[] ids) {
         int[][] idsArray = new int[1][ids.length];
         idsArray[0] = ids;
         return normalizeIds(idsArray);
@@ -102,7 +106,7 @@ public class Util {
      * @param arrays arrays to search among them
      * @return
      */
-    public synchronized static boolean contains(int value, int[]...arrays) {
+    public static boolean contains(int value, int[]...arrays) {
         int count = 0;
         for(int[] array : arrays) {
             for (int v : array) {
@@ -114,7 +118,7 @@ public class Util {
         return false;
     }
 
-    public synchronized static boolean contains(int value, int[] values) {
+    public static boolean contains(int value, int[] values) {
         int[][] arrays = new int[1][];
         arrays[0] = values;
         return contains(value, arrays);
@@ -128,7 +132,7 @@ public class Util {
      * @param ids
      * @return
      */
-    public synchronized static int[] normalizeIds(int[]... ids) {
+    public static int[] normalizeIds(int[]... ids) {
         int maxRawId = Integer.MIN_VALUE;
         // maximum raw (un-normalized) id found among all the arrays
         for (int a = 0; a < ids.length; a++) {
@@ -143,11 +147,48 @@ public class Util {
         for (int a = 0; a < ids.length; a++) {
             for (int i = 0; i < ids[a].length; i++) {
                 int rawId = ids[a][i];
-                if (toNormal[rawId] == -1) {
+                if (rawId >= 0 && toNormal[rawId] == -1) {
                     toNormal[rawId] = counter++; // starts from 0
                 }
             }
         }
         return toNormal;
+    }
+
+    /**
+     * Return a permutation of 0...size
+     * It is biased (good enough) but fast
+     * @param size
+     */
+    public static int[] permute(int size){
+        int[] permutation = new int[size];
+        for(int p = 0; p < permutation.length ; p++){
+            permutation[p] = p;
+        }
+        // Swap index "p" with some position before (inclusive)
+        for(int select, p = 1 ; p < permutation.length ; p++){
+            select = (int) (Math.random() * (p + 1));
+            permutation[p] = permutation[select];
+            permutation[select] = p;
+        }
+        return permutation;
+    }
+
+    /**
+     * Return full matrix of three triads mutually connected to each other via a negative link
+     * forming a triad of triads
+     */
+    public static float[][] getThreeTriads(){
+        float[][] matrix = {
+                {0, 1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0}, // 0
+                {1, 0,  1,  -1, 0,  0,  0,  0,  0,  0,  0,  0}, // 1
+                {1, 1,  0,  0,  0,  0,  -1, 0,  0,  0,  0,  0}, // 2
+                {0, -1, 0,  0,  1,  1,  0,  0,  0,  0,  0,  0}, // 3
+                {0, 0,  0,  1,  1,  1,  0,  0,  0,  0,  0,  0}, // 4
+                {0, 0,  0,  1,  1,  0,  0,  -1, 0,  0,  0,  0}, // 5
+                {0, 0,  -1, 0,  0,  0,  0,  1,  1,  0,  0,  0}, // 6
+                {0, 0,  -1, 0,  0,  0,  0,  1,  1,  0,  0,  0}, // 7
+        };
+        return matrix;
     }
 }

@@ -16,4 +16,8 @@ public class PartitionStatistics {
      * Number of discarded pairs which their row or column is assigned to partition -1
      */
     public int discardedCount;
+    /**
+     * Maximum group id
+     */
+    public int maxGroupId = Integer.MIN_VALUE;
 }

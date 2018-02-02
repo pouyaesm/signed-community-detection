@@ -10,7 +10,7 @@ public class MatrixStatistics {
      * @param matrix
      * @return
      */
-    public PartitionStatistics partitionStatistics(int[] partition, ListMatrix matrix){
+    public static PartitionStatistics partitionStatistics(int[] partition, ListMatrix matrix){
         PartitionStatistics statistics = new PartitionStatistics();
         int[] rows = matrix.getRows();
         int[] columns = matrix.getColumns();
@@ -18,7 +18,8 @@ public class MatrixStatistics {
         // when an entry is discarded, partitions "-1" exists in the input and must be excluded
         int hasDiscarded = Util.contains(-1, partition) ? 1 : 0;
         statistics.groupCount = Util.uniqueCount(partition) - hasDiscarded;
-        statistics.groupSizes = new int[statistics.groupCount];
+        statistics.maxGroupId = Util.max(partition);
+        statistics.groupSizes = new int[statistics.maxGroupId + 1];
         // Calculate number of pairs per partitions
         for(int p = 0 ; p < rows.length ; p++){
             int rowGroupId = partition[rows[p]];

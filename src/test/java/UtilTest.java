@@ -3,7 +3,7 @@ import Core.Util;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
-public class UtilTests {
+public class UtilTest {
 
     @Test
     public void testQuickSort() {
@@ -61,5 +61,20 @@ public class UtilTests {
         int countTwo = Util.count(2, values);
         Assert.assertEquals(4, countZero);
         Assert.assertEquals(1, countTwo);
+    }
+
+    @Test
+    public void testPermute(){
+        // Each index 0...size-1 must be present
+        int[] permute = Util.permute(100);
+        Assert.assertEquals("Each index must be present one and only once",
+                100, Util.uniqueCount(permute));
+    }
+
+    /**
+     * Minimum maximum test
+     */
+    public void testMinMax(){
+
     }
 }

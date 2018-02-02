@@ -1,14 +1,12 @@
 package Core;
 
+import static Core.ListMatrix.ROW;
+
 public class Graph extends SparseMatrix {
     /**
      * Attributes per node
      */
     float[][] attributes;
-
-    public Graph(){
-
-    }
 
     public Graph(ListMatrix listMatrix){
         super(listMatrix);
@@ -16,14 +14,14 @@ public class Graph extends SparseMatrix {
 
     /**
      * Decompose graph based on the partition, normalize node ids of each sub-graph
-     * @param partitions
+     * @param partition
      * @return
      */
-    public Graph[] decompose(int[] partitions){
-        ListMatrix[] lists = getListMatrix().decompose(partitions);
-        Graph[] graphs = new Graph[lists.length];
-        for(int pr = 0 ; pr < lists.length; pr++){
-            ListMatrix list = lists[pr].normalize(false, true);
+    @Override
+    public Graph[] decompose(int[] partition){
+        Graph[] graphs = (Graph[]) super.decompose(partition);
+        for(int pr = 0 ; pr < graphs.length; pr++){
+            ListMatrix list = graphs[pr].getListMatrix().normalize(false, true);
             if(!hasAttributes()){
                 continue; // no node attributes to copy
             }
@@ -34,20 +32,46 @@ public class Graph extends SparseMatrix {
                 int rawId = list.getToRaw()[0][normalizedId];
                 attributes[normalizedId] = getAttributes()[rawId].clone();
             }
-            graphs[pr] = new Graph().setAttributes(attributes);
+            graphs[pr].setAttributes(attributes);
         }
         return graphs;
     }
 
     /**
-     * Fold the nodes and edges inside each partition, into one node,
-     * aggregate the attribute of members accordingly
-     * @param partitions
+     * Fold the graph based on the partition, aggregate node attributes
+     * @param partition
      * @return
      */
-    public Graph fold(int[] partitions){
+    @Override
+    public Graph fold(int[] partition){
+        Graph folded = (Graph) super.fold(partition);
+        if (attributes == null) {
+            return folded; // no attributes to aggregate
+        }
+        // Aggregate the attributes of nodes into their superNode
+        ListMatrix listMatrix = folded.getListMatrix();
+        int groupCount = listMatrix.getRowCount();// node count after fold = number of groups
+        int attributeCount = this.attributes[0].length;
+        float[][] attributes = new float[groupCount][attributeCount];
+        // Aggregate attribute of nodes into their group node
+        // Assumption: superNodes are normalized version of their groupIds in partition
+        int[] groupToSuperGroupId = listMatrix.getToNormal()[ROW];
+        for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
+            int superGroupId = groupToSuperGroupId[partition[nodeId]];
+            for(int attr = 0 ; attr < attributeCount ; attr++){
+                attributes[superGroupId][attr] += this.attributes[nodeId][attr];
+            }
+        }
+        folded.setAttributes(attributes);
+        return folded;
+    }
 
-        return null;
+    /**
+     * Number of graph nodes (row count = column count)
+     * @return
+     */
+    public int getNodeCount(){
+        return hasList() ? getListMatrix().getRowCount() : 0;
     }
 
     public Graph setAttributes(float[][] attributes) {
@@ -61,5 +85,19 @@ public class Graph extends SparseMatrix {
 
     public boolean hasAttributes(){
         return attributes != null;
+    }
+
+    /**
+     * Does graph have edge?
+     * @return
+     */
+    public boolean hasEdge(){
+        // Each member of the list matrix is an edge
+        return hasList();
+    }
+
+    @Override
+    public Graph newInstance() {
+        return new Graph(null);
     }
 }

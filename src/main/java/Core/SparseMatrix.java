@@ -3,7 +3,7 @@ package Core;
 /**
  * Sparse column matrix
  */
-public class SparseMatrix {
+public class SparseMatrix extends BaseMatrix {
     /**
      * Input List matrix
      */
@@ -33,7 +33,9 @@ public class SparseMatrix {
      * @param listMatrix
      */
     public SparseMatrix(ListMatrix listMatrix){
-        init(listMatrix);
+        if(listMatrix != null) {
+            init(listMatrix);
+        }
     }
 
     /**
@@ -41,7 +43,7 @@ public class SparseMatrix {
      * Assumption: there must be no duplicate (row, column) in the input
      * @param listMatrix
      */
-    private SparseMatrix init(ListMatrix listMatrix){
+    public SparseMatrix init(ListMatrix listMatrix){
         if(!listMatrix.isSorted() || !listMatrix.isUnique() || !listMatrix.isNormalized()){
             try {
                 throw new Exception("ListMatrix must be sorted, unique, and normalized.");
@@ -95,17 +97,32 @@ public class SparseMatrix {
      * Transpose the sparse matrix
      * @return
      */
+    @Override
     public SparseMatrix transpose(boolean clone){
         ListMatrix transposedList = getListMatrix().transpose(clone);
-        return clone ? new SparseMatrix(transposedList) : init(transposedList);
+        return clone ? newInstance().init(transposedList) : init(transposedList);
     }
 
     /**
-     * Transpose the sparse matrix with cloning as default
-     * @return
+     * Fold the sparse matrix for the given partition
      */
-    public SparseMatrix transpose(){
-        return transpose(true);
+    @Override
+    public SparseMatrix fold(int[] partition){
+        ListMatrix foldedList = getListMatrix().fold(partition);
+        return newInstance().init(foldedList);
+    }
+
+    /**
+     * Decompose the sparse matrix into given partitions
+     */
+    @Override
+    public SparseMatrix[] decompose(int[] partition){
+        ListMatrix[] decomposedLists = getListMatrix().decompose(partition);
+        SparseMatrix[] matrices = new SparseMatrix[decomposedLists.length];
+        for(int m = 0 ; m < decomposedLists.length ; m++){
+            matrices[m] = newInstance().init(decomposedLists[m]);
+        }
+        return matrices;
     }
 
     /**
@@ -123,13 +140,39 @@ public class SparseMatrix {
         return matrix;
     }
 
+    /**
+     * Get sparse cell values of given row id
+     * @param rowId
+     * @return
+     */
+    public float[] getValues(int rowId){
+        return values[rowId];
+    }
+
+    /**
+     * Get column indices of given row id
+     * @param rowId
+     * @return
+     */
+    public int[] getColumns(int rowId){
+        return columnIndices[rowId];
+    }
+
     public ListMatrix getListMatrix() {
         return listMatrix;
     }
 
+    /**
+     * Whether matrix has a non-empty list of cells
+     * @return
+     */
+    public boolean hasList(){
+        return getListMatrix() != null && getListMatrix().getRowCount() > 0;
+    }
+
     @Override
     public Object clone(){
-        SparseMatrix clone = new SparseMatrix();
+        SparseMatrix clone = newInstance();
         clone.listMatrix = (ListMatrix) getListMatrix().clone();
         clone.rowSizes = rowSizes.clone();
         clone.values = new float[values.length][];
@@ -139,5 +182,14 @@ public class SparseMatrix {
             clone.columnIndices[r] = columnIndices[r].clone();
         }
         return clone;
+    }
+
+    /**
+     * This is implemented by subclasses for instantiations
+     * @return
+     */
+    @Override
+    public SparseMatrix newInstance(){
+        return new SparseMatrix();
     }
 }

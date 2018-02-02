@@ -2,7 +2,7 @@ import Core.ListMatrix;
 import Core.SparseMatrix;
 import org.junit.Test;
 
-public class SparseMatrixTests {
+public class SparseMatrixTest {
 
     @Test
     public void testSparseMatrixConstruction(){

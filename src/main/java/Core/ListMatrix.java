@@ -1,11 +1,13 @@
 package Core;
 
-public class ListMatrix {
+public class ListMatrix extends BaseMatrix{
 
     public static final int MODE_REMOVE_DUPLICATE = 1; // 0001
     public static final int MODE_AGGREGATE_DUPLICATE = 3; // 0011
     public static final int MODE_NOT_CLONE = 4; // 0100
     public static final int MODE_CLONE = 8; // 1000
+    public static final int ROW = 0; // index of row related data
+    public static final int COL = 1; // index of column related data
 
     private int[] rows;
     private int[] columns;
@@ -78,14 +80,48 @@ public class ListMatrix {
         setRows(rows);
         setColumns(columns);
         setValues(values);
-        // calculate number of unique row and column ids
         this.isIdShared = isIdShared;
-        if(isIdShared){
-            this.rowCount = this.columnCount = Util.uniqueCount(rows, columns);
-        }else{
-            this.rowCount = Util.uniqueCount(rows);
-            this.columnCount = Util.uniqueCount(columns);
+        // calculate number of unique row and column ids
+        calculateCounts(isIdShared);
+        return this;
+    }
+
+    /**
+     * Initialize with a full matrix
+     * @param matrix
+     * @return
+     */
+    public ListMatrix init(float[][] matrix, boolean isIdShared){
+        int nonZeroCount = 0;
+        for(int r = 0 ; r < matrix.length ; r++){
+            for(int c = 0 ; c < matrix.length ; c++){
+                if(matrix[r][c] != 0.0){
+                    nonZeroCount++;
+                }
+            }
         }
+        int[] rows = new int[nonZeroCount];
+        int[] columns = new int[nonZeroCount];
+        float[] values = new float[nonZeroCount];
+        int insertAt = 0;
+        for(int r = 0 ; r < matrix.length ; r++){
+            for(int c = 0 ; c < matrix.length ; c++){
+                float value = matrix[r][c];
+                if(value != 0.0){
+                    rows[insertAt] = r;
+                    columns[insertAt] = c;
+                    values[insertAt] = value;
+                    insertAt++;
+                }
+            }
+        }
+        setRows(rows);
+        setColumns(columns);
+        setValues(values);
+        this.isIdShared = isIdShared;
+        setStatus(true, true, true, true, MODE_NOT_CLONE);
+        // calculate number of unique row and column ids
+        calculateCounts(isIdShared);
         return this;
     }
 
@@ -174,23 +210,21 @@ public class ListMatrix {
         // Normalize ids
         int[][] toNormal = new int[2][]; // for rows and columns
         int[][] toRaw = new int[2][];
-        int forRow = 0;
-        int forColumn = 1;
         if(isIdShared()){
-            toNormal[forRow] = toNormal[forColumn] = Util.normalizeIds(getRows(), getColumns());
-            toRaw[forRow] = toRaw[forColumn] = new int[Util.max(toNormal[forRow]) + 1];
+            toNormal[ROW] = toNormal[COL] = Util.normalizeIds(getRows(), getColumns());
+            toRaw[ROW] = toRaw[COL] = new int[Util.max(toNormal[ROW]) + 1];
         }else{
-            toNormal[forRow] = Util.normalizeIds(getRows());
-            toNormal[forColumn] = Util.normalizeIds(getColumns());
-            toRaw[forRow] = new int[Util.max(toNormal[forRow]) + 1];
-            toRaw[forColumn] = new int[Util.max(toNormal[forColumn]) + 1];
+            toNormal[ROW] = Util.normalizeIds(getRows());
+            toNormal[COL] = Util.normalizeIds(getColumns());
+            toRaw[ROW] = new int[Util.max(toNormal[ROW]) + 1];
+            toRaw[COL] = new int[Util.max(toNormal[COL]) + 1];
         }
         // Change row and column ids from raw to normal
         for(int p = 0 ; p < rows.length ; p++){
-            rows[p] = toNormal[forRow][getRows()[p]];
+            rows[p] = toNormal[ROW][getRows()[p]];
         }
         for(int p = 0 ; p < rows.length ; p++){
-            columns[p] = toNormal[forColumn][getColumns()[p]];
+            columns[p] = toNormal[COL][getColumns()[p]];
         }
         // Construct the toRaw id mapper for rows and columns
         for(int dim = 0 ; dim < 2 ; dim++){
@@ -255,10 +289,9 @@ public class ListMatrix {
         }
         int[] uRows = clone ? new int[rows.length] : rows;
         int[] uColumns = clone ? new int[columns.length] : columns;
-        int forRow = 0, forColumn = 1;
         for(int p = 0 ; p < rows.length ; p++){
-            uRows[p] = toRaw[forRow][rows[p]];
-            uColumns[p] = toRaw[forColumn][columns[p]];
+            uRows[p] = toRaw[ROW][rows[p]];
+            uColumns[p] = toRaw[COL][columns[p]];
         }
         ListMatrix unNormalizedList = clone ? new ListMatrix() : this;
         if(clone){
@@ -301,15 +334,14 @@ public class ListMatrix {
         }
         // swap toNormal and toRaw id maps between row and column
         if(isNormalized()){
-            int forRow = 0, forColumn = 1;
-            int[] toNormalRowTemp = getToNormal()[forRow];
-            int[] toRawRowTemp = getToRaw()[forRow];
+            int[] toNormalRowTemp = getToNormal()[ROW];
+            int[] toRawRowTemp = getToRaw()[ROW];
             transposedList.toNormal = new int[2][];
             transposedList.toRaw = new int[2][];
-            transposedList.toNormal[forRow] = getToNormal()[forColumn];
-            transposedList.toNormal[forColumn] = toNormalRowTemp;
-            transposedList.toRaw[forRow] = getToRaw()[forColumn];
-            transposedList.toRaw[forColumn] = toRawRowTemp;
+            transposedList.toNormal[ROW] = getToNormal()[COL];
+            transposedList.toNormal[COL] = toNormalRowTemp;
+            transposedList.toRaw[ROW] = getToRaw()[COL];
+            transposedList.toRaw[COL] = toRawRowTemp;
         }
         transposedList.setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         return transposedList;
@@ -324,7 +356,7 @@ public class ListMatrix {
      * @return
      */
     public ListMatrix[] decompose(int[] partition){
-        PartitionStatistics statistics = new MatrixStatistics().partitionStatistics(partition, this);
+        PartitionStatistics statistics = MatrixStatistics.partitionStatistics(partition, this);
         int[] allRows = getRows();
         int[] allColumns = getColumns();
         float[] allValues = getValues();
@@ -379,26 +411,39 @@ public class ListMatrix {
         int[] allRows = getRows();
         int[] allColumns = getColumns();
         float[] allValues = getValues();
-        PartitionStatistics statistics = new MatrixStatistics().partitionStatistics(partition, this);
-        // number of pairs with no discarded row/column
+        // Number of pairs with no discarded row/column
+        PartitionStatistics statistics = MatrixStatistics.partitionStatistics(partition, this);
         int validPairs = allRows.length - statistics.discardedCount;
         int[] rows = new int[validPairs];
         int[] columns = new int[validPairs];
         float[] values = new float[validPairs];
+        int[] normalGroupId = Util.normalizeIds(partition);
+        int[][] toRaw = new int[2][]; // map id of row/columns to their raw (unNormalized) group id
+        int[][] toNormal = new int[2][]; // raw group ids to normalized group ids used as row/column ids
+        toRaw[ROW] = toRaw[COL] = new int[statistics.groupCount];
+        toNormal[ROW] = new int[statistics.maxGroupId + 1];
+        toNormal[COL] = new int[statistics.maxGroupId + 1];
         int insertAt = 0;
         for(int p = 0 ; p < allRows.length ; p++){
-            int rowGroupId = partition[allRows[p]];
-            int columnGroupId = partition[allColumns[p]];
-            if(rowGroupId < 0 || columnGroupId < 0){
+            int rowRawGroupId = partition[allRows[p]];
+            int columnRawGroupId = partition[allColumns[p]];
+            if(rowRawGroupId < 0 || columnRawGroupId < 0){
                 continue; // pair is discarded by the partition
             }
+            int rowGroupId = normalGroupId[rowRawGroupId];
+            int columnGroupId = normalGroupId[columnRawGroupId];
             rows[insertAt] = rowGroupId;
             columns[insertAt] = columnGroupId;
             values[insertAt] = allValues[p];
+            toRaw[ROW][rowGroupId] = rowRawGroupId;
+            toRaw[COL][columnGroupId] = columnRawGroupId;
+            toNormal[ROW][rowRawGroupId] = rowGroupId;
+            toNormal[COL][columnRawGroupId] = columnGroupId;
             insertAt++;
         }
         ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
                 .sort(isIdAscending(), MODE_AGGREGATE_DUPLICATE)
+                .setMaps(toNormal, toRaw)
                 .setStatus(true, true, true, isIdAscending(), MODE_AGGREGATE_DUPLICATE);
         return foldedMatrix;
     }
@@ -471,6 +516,18 @@ public class ListMatrix {
         return listMatrix;
     }
 
+    /**
+     * Calculate and set the unique number of row and column counts
+     */
+    private void calculateCounts(boolean isIdShared){
+        if(isIdShared){
+            this.rowCount = this.columnCount = Util.uniqueCount(rows, columns);
+        }else{
+            this.rowCount = Util.uniqueCount(rows);
+            this.columnCount = Util.uniqueCount(columns);
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder string = new StringBuilder("[");
@@ -482,6 +539,11 @@ public class ListMatrix {
         }
         string.append("]");
         return string.toString();
+    }
+
+    @Override
+    public BaseMatrix newInstance() {
+        return new ListMatrix();
     }
 
     public ListMatrix setMaps(int[][] toNormal, int[][] toRaw){

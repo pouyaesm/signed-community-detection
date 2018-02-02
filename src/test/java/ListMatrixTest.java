@@ -1,9 +1,11 @@
+import Core.GraphReader;
 import Core.ListMatrix;
-import Core.SparseMatrix;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ListMatrixTests {
+import java.io.FileNotFoundException;
+
+public class ListMatrixTest {
 
     @Test
     public void testListMatrixSortUniquely(){
@@ -28,10 +30,8 @@ public class ListMatrixTests {
         int[] rows = {      3,  2,      2,      1000};
         int[] columns = {   10, 300,    100,    2};
         float[] values = {  1,  2,      3,      4};
-        ListMatrix list = new ListMatrix().init(rows, columns, values, false)
-                .normalize(true);
-        ListMatrix listShared = new ListMatrix().init(rows, columns, values, true)
-                .normalize(true);
+        ListMatrix list = new ListMatrix().init(rows, columns, values, false).normalize(true);
+        ListMatrix listShared = new ListMatrix().init(rows, columns, values, true).normalize(true);
         ListMatrix unNormalized = list.unNormalize(true);
         int[] expectedRows = {          0,  1,      1,      2};
         int[] expectedColumns = {       0,  1,      2,      3};
@@ -97,11 +97,21 @@ public class ListMatrixTests {
         float[] values = {  1,  3,  4,  4};
         int[] partitions = {-1, 0, 1, -1, 0, 1, -1}; // partition into {1, 4} and {2, 5}, discard {6}
         ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, true).fold(partitions);
-        System.out.println(foldedMatrix.toString());
         // folded matrix ids are sorted descending by default since the original matrix is not sorted
         Assert.assertArrayEquals(new int[]{0, 0}, foldedMatrix.getRows());
         Assert.assertArrayEquals(new int[]{1, 0}, foldedMatrix.getColumns());
         Assert.assertArrayEquals("Intra- or Inter-Group values must be aggregated",
                 new float[]{5, 3}, foldedMatrix.getValues(), 0.0001f);
+    }
+
+    @Test
+    public void testGraphReader() throws Exception{
+        ListMatrix listMatrix = GraphReader.readListMatrix("example/threeEdges.txt", 3);
+        int[] expectedRows = {1, 5, 1};
+        int[] expectedColumns = {2, 1, 7};
+        float[] expectedValues = {10, -11.5f, 12};
+        Assert.assertArrayEquals(expectedRows, listMatrix.getRows());
+        Assert.assertArrayEquals(expectedColumns, listMatrix.getColumns());
+        Assert.assertArrayEquals(expectedValues, listMatrix.getValues(), .00001f);
     }
 }

@@ -23,7 +23,7 @@ public class Stationary {
     }
 
     /**
-     * Find the nodeUnRecorded stationary state of transition matrix, and write it to statistics
+     * Find the nodeUnRecorded stationary state of transition matrix, and writePartition it to statistics
      * this is achieved by post-processing of calculated recorded probabilities
      * @param recorded recorded visiting probabilities
      * @param negativeTeleport
@@ -53,7 +53,7 @@ public class Stationary {
         return unrecorded;
     }
     /**
-     * Find the nodeRecorded stationary state of transition matrix, and write it to statistics
+     * Find the nodeRecorded stationary state of transition matrix, and writePartition it to statistics
      * @param teleport
      * @param negativeTeleport
      * @param tau

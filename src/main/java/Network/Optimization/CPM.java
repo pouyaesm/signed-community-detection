@@ -17,6 +17,11 @@ public class CPM extends RosvallBergstrom {
     private float resolution;
 
     public int[] detect(Graph graph, float resolution, float alpha, int refineCount){
+        Graph[] graphs = {graph};
+        return detect(graphs, resolution, alpha, refineCount, 1)[0];
+    }
+
+    public int[][] detect(Graph[] graphs, float resolution, float alpha, int refineCount, int threadCount){
         if(alpha < 0 || alpha > 1 || resolution < 0){
             try {
                 throw new Exception("alpha must be [0, 1], and resolution > 0");
@@ -25,17 +30,24 @@ public class CPM extends RosvallBergstrom {
             }
             return null;
         }
-        this.alpha = alpha;
-        this.resolution = resolution;
-        // Number of nodes inside each node, this size will increase
-        // during the folding of nodes into one node
-        float [][] nodeSizes = new float[graph.getNodeCount()][1];
-        for(int n = 0 ; n < nodeSizes.length ; n++){
-            nodeSizes[n][0] = 1;
+        setAlpha(alpha);
+        setResolution(resolution);
+        for(Graph graph : graphs) {
+            /*
+                Set the number of nodes inside each node (which is 1)
+                this size will increase during the folding of nodes into one node
+             */
+            float [][] nodeSizes = new float[graph.getNodeCount()][1];
+            for(int n = 0 ; n < nodeSizes.length ; n++){
+                nodeSizes[n][0] = 1;
+            }
+            graph.setAttributes(nodeSizes);
         }
-        graph.setAttributes(nodeSizes);
-        int[] bestPartition = partition(graph, refineCount);
-        return RosvallBergstrom.postProcess(graph, bestPartition);
+        int[][] bestPartition = partition(graphs,refineCount, threadCount);
+        for(int graphId = 0 ; graphId < graphs.length ; graphId++){
+            bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
+        }
+        return bestPartition;
     }
 
     @Override
@@ -228,5 +240,20 @@ public class CPM extends RosvallBergstrom {
         float hamiltonian = cpmParameters.alpha * positiveHamiltonian
                 - (1 - cpmParameters.alpha) * negativeHamiltonian;
         return hamiltonian;
+    }
+
+    @Override
+    public CPM newDetector() {
+        return new CPM().setResolution(resolution).setAlpha(alpha);
+    }
+
+    public CPM setResolution(float resolution) {
+        this.resolution = resolution;
+        return this;
+    }
+
+    public CPM setAlpha(float alpha) {
+        this.alpha = alpha;
+        return this;
     }
 }

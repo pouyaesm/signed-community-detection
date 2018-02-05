@@ -1,5 +1,5 @@
 import Network.Core.Graph;
-import Network.Core.GraphReader;
+import Network.Core.GraphIO;
 import Network.Optimization.CPMapParameters;
 import Network.SignedMapEquation.SiMapStatistics;
 import Network.SignedMapEquation.SiMap;
@@ -13,7 +13,7 @@ public class SignedMapEquationTest {
      */
     @Test
     public void testReWeight() throws Exception{
-        Graph graph = GraphReader.readGraph("testCases/siMap.txt", false, 6);
+        Graph graph = GraphIO.readGraph("testCases/siMap.txt", false);
         int[] partition = {0, 0, 0, 0, 1, 2, 2}; // {0, 1, 2, 3}, {4}, {5, 6}
         SiMapStatistics statistics = SiMap.reweight(graph, partition);
         // Check transitions and neighbors of node "0" ("1" in graph file)
@@ -25,7 +25,7 @@ public class SignedMapEquationTest {
 
     @Test
     public void testEvaluation() throws Exception{
-        Graph graph = GraphReader.readGraph("testCases/infoMap.txt", true, 42);
+        Graph graph = GraphIO.readGraph("testCases/infoMap.txt", true);
         int[] bestPartition = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3};
         CPMapParameters parameters = new CPMapParameters();
         parameters.USE_RECORDED = false;

@@ -155,4 +155,11 @@ public class Graph extends SparseMatrix {
     public Graph newInstance() {
         return new Graph(null);
     }
+
+    @Override
+    public Graph clone() {
+        Graph graph = (Graph) super.clone();
+        graph.setAttributes(cloneAttributes());
+        return graph;
+    }
 }

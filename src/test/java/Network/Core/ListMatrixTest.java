@@ -3,8 +3,6 @@ package Network.Core;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
-
 public class ListMatrixTest {
 
     @Test
@@ -105,19 +103,8 @@ public class ListMatrixTest {
     }
 
     @Test
-    public void testGraphReader() throws Exception{
-        ListMatrix listMatrix = GraphReader.readListMatrix("testCases/threeEdges.txt", false, 3);
-        int[] expectedRows = {1, 5, 1};
-        int[] expectedColumns = {2, 1, 7};
-        float[] expectedValues = {10, -11.5f, 12};
-        Assert.assertArrayEquals(expectedRows, listMatrix.getRows());
-        Assert.assertArrayEquals(expectedColumns, listMatrix.getColumns());
-        Assert.assertArrayEquals(expectedValues, listMatrix.getValues(), .00001f);
-    }
-
-    @Test
     public void testUniSignListMatrix() throws Exception{
-        ListMatrix listMatrix = GraphReader.readListMatrix("testCases/threeEdges.txt", false, 3);
+        ListMatrix listMatrix = GraphIO.readListMatrix("testCases/threeEdges.txt", false);
         ListMatrix positive = listMatrix.getUniSignListMatrix(true);
         ListMatrix negative = listMatrix.getUniSignListMatrix(false);
 

@@ -1,90 +1,198 @@
+import Network.Core.GraphIO;
+import Network.Core.Graph;
+import Network.Optimization.CPM;
 import org.apache.commons.cli.*;
 
 public class Main {
 
-    private static final String INPUT = "i";
+    public static final String VERSION_ID = "1.0.0";
+
+    private static final String DETECT = "detect";
+    private static final String EVAULTE = "evaluate";
+    private static final String ANALYSE = "analyse";
+
+    private static final String GRAPH_INPUT = "i";
+    private static final String PARTITION_INPUT = "p";
     private static final String OUTPUT = "o";
     private static final String RESOLUTION = "r";
+    private static final String RESOLUTION_DEFAULT = "0.05";
     private static final String ALPHA = "a";
-    private static final String ITERATION = "i";
-    private static final String EVALUATE = "e";
-    private static final String DETECT = "d";
+    private static final String ALPHA_DEFAULT = "0.5";
+    private static final String ITERATION = "t";
+    private static final String ITERATION_DEFAULT = "2";
     private static final String HELP = "h";
+    private static final String VERSION = "v";
 
+    private static final String ERR_INPUT = "input address is not specified";
     public static void main(String[] args) {
-
-        // create the parser
-        CommandLineParser parser = new DefaultParser();
-        try {
-            // parse the command line arguments
-            CommandLine line = parser.parse( getOptions(), args );
-            if(line.hasOption(INPUT)){
-                System.out.println(line.getOptionValue(INPUT));
+//        for (String arg : args){
+////            System.out.println(arg);
+////        }
+        if(args.length == 0){
+            System.out.println(getIntroduction());
+            return;
+        }else if (args.length == 1) {
+            System.out.println(getIntroduction());
+        }else{
+            String[] operationArgs = new String[args.length - 1];
+            // remove the operation argument to fed to each operation parser
+            for(int i = 0 ; i < args.length - 1 ; i++){
+                operationArgs[i] = args[i + 1];
             }
-            if(line.hasOption(OUTPUT)){
-                System.out.println(line.getOptionValue(OUTPUT));
+            String operation = args[0];
+            switch (operation){
+                case DETECT:
+                    parseDetectionOptions(operationArgs);
+                    return;
+                case EVAULTE:
+                case ANALYSE:
+                default:
+                    parseMainOptions(operationArgs);
             }
-            if(line.hasOption(RESOLUTION)){
-                System.out.println(line.getOptionValue(RESOLUTION));
-            }
-            if(line.hasOption(HELP)){
-                showHelp();
-            }
-            System.out.println(line.getOptionValue(ALPHA, "0.5"));
-            System.out.println(line.getOptionValue(ITERATION, "2"));
-        }
-        catch( ParseException exp ) {
-            // oops, something went wrong
-            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
-            showHelp();
         }
     }
 
-    public static void showHelp(){
-        String header = "You can do community detection and partition evaluation\n\n";
-        String footer = "\nPlease report issues at http://example.com/issues";
+    public static void parseEvaluationOptions(String args[]){
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // isNumber the command line arguments
+            CommandLine line = parser.parse( getDetectionOptions(), args );
+            if(line.hasOption(HELP)){
+                showDetectionHelp();
+                return;
+            }
+            String graphInput = line.getOptionValue(GRAPH_INPUT, "");
+            if(graphInput.length() == 0){
+                throw new ParseException(ERR_INPUT);
+            }
+            String output = line.getOptionValue(OUTPUT, "com_" + graphInput);
+            float resolution = Float.parseFloat(line.getOptionValue(RESOLUTION, RESOLUTION_DEFAULT));
+            float alpha = Float.parseFloat(line.getOptionValue(ALPHA, ALPHA_DEFAULT));
+            int iteration = Integer.parseInt(line.getOptionValue(ITERATION, ITERATION_DEFAULT));
+            CPM detector = new CPM();
+            Graph graph = GraphIO.readGraph(graphInput, true);
+            int[] partition = detector.detect(graph, resolution, alpha, 0);
+            GraphIO.writePartition(graph, partition, output);
+        } catch( ParseException exp ) {
+            // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+            showDetectionHelp();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void parseDetectionOptions(String args[]){
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // isNumber the command line arguments
+            CommandLine line = parser.parse( getDetectionOptions(), args );
+            if(line.hasOption(HELP)){
+                showDetectionHelp();
+                return;
+            }
+            String input = line.getOptionValue(GRAPH_INPUT, "");
+            if(input.length() == 0){
+                throw new ParseException(ERR_INPUT);
+            }
+            String output = line.getOptionValue(OUTPUT, "com_" + input);
+            float resolution = Float.parseFloat(line.getOptionValue(RESOLUTION, RESOLUTION_DEFAULT));
+            float alpha = Float.parseFloat(line.getOptionValue(ALPHA, ALPHA_DEFAULT));
+            int iteration = Integer.parseInt(line.getOptionValue(ITERATION, ITERATION_DEFAULT));
+            CPM detector = new CPM();
+            Graph graph = GraphIO.readGraph(input, true);
+            int[] partition = detector.detect(graph, resolution, alpha, 0);
+            GraphIO.writePartition(graph, partition, output);
+        } catch( ParseException exp ) {
+            // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+            showDetectionHelp();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void showDetectionHelp(){
+        String header = "Options used for community detection:\n\n";
+        String footer = "";
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("Main", header, getOptions(), footer, true);
+        formatter.printHelp(DETECT, header, getDetectionOptions(), footer, true);
     }
 
     /**
      * Return the list of available argument objects to be passed to the program
      * @return
      */
-    public static Options getOptions(){
+    public static Options getDetectionOptions(){
         // create Options object
-        Options options = new Options();
-        Option input = Option.builder(INPUT)
-                .required().longOpt("input").desc("Input file or directory.").hasArg().build();
-        Option output = Option.builder(OUTPUT)
-                .required().longOpt("output")
-                .desc("Output location. For multiple input files, the closest directory is used.")
-                .hasArg().build();
+        Option input = Option.builder(GRAPH_INPUT).longOpt("input").desc("Input edge list file")
+                .hasArg().argName("address").type(String.class).build();
+        Option output = Option.builder(OUTPUT).longOpt("output")
+                .desc("Output file")
+                .hasArg().hasArg().argName("address").type(String.class).build();
         Option resolution = Option.builder(RESOLUTION)
                 .longOpt("resolution").desc("Resolution for fast community detection at a specific scale;" +
-                        " by default, the best resolution is searched by minimizing the Minimum Description Length")
-                .hasArg().build();
+                        " larger values result in smaller and denser communities. Default value is "
+                        + RESOLUTION_DEFAULT)
+                .hasArg().argName("resolution").type(Float.class).build();
         Option alpha = Option.builder(ALPHA)
                 .longOpt("alpha")
-                .desc("Relative importance of positive links compared to negative links; default is 0.5")
-                .hasArg().build();
-        Option refineCount = Option.builder(ITERATION)
+                .desc("Relative importance of positive links compared to negative links. Default is "
+                        + ALPHA_DEFAULT)
+                .hasArg().argName("weight").type(Float.class).build();
+        Option iteration = Option.builder(ITERATION)
                 .longOpt("iteration")
-                .desc("Number of times partition is further refined for improvement; default is 2")
-                .hasArg().build();
-        Option evaluate = Option.builder(ITERATION)
-                .longOpt("evaluate")
-                .desc("Output the partition quality based on input partition")
-                .hasArg().build();
-        Option detect = Option.builder(ITERATION)
-                .longOpt("iteration")
-                .desc("Number of times partition is further refined for improvement; default is 2")
-                .hasArg().build();
-        Option help = Option.builder(ITERATION)
+                .desc("Number of times partition is further refined. Default value is "
+                        + ITERATION_DEFAULT)
+                .hasArg().argName("count").type(Integer.class).build();
+        Option help = Option.builder(HELP)
                 .longOpt("help")
-                .desc("See how to use the program").build();
+                .desc("List of options for community detection").build();
+        Options options = new Options();
         options.addOption(input).addOption(output).addOption(resolution)
-                .addOption(alpha).addOption(refineCount).addOption(help);
+                .addOption(alpha).addOption(iteration).addOption(help);
         return options;
+    }
+
+    public static void parseMainOptions(String[] args){
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // isNumber the command line arguments
+            CommandLine line = parser.parse( getMainOptions(), args );
+            if(line.hasOption(VERSION) || line.hasOption(HELP)){
+                System.out.println(getIntroduction());
+            }
+        }
+        catch( ParseException exp ) {
+        }
+    }
+    /**
+     * Return the list of available main options
+     * @return
+     */
+    public static Options getMainOptions(){
+        // create Options object
+        Options options = new Options();
+        Option input = Option.builder(VERSION)
+                .longOpt("version").desc("Program version").build();
+        Option output = Option.builder(HELP)
+                .longOpt("help").desc("List of available commands").build();
+        options.addOption(input).addOption(output).addOption(output);
+        return options;
+    }
+
+    /**
+     * Program introduction
+     * @return
+     */
+    public static String getIntroduction(){
+        return "\nCommunity Detection in Signed, Directed, and Weighted Networks @ 2018 version " + VERSION_ID +
+                "\nAvailable commands are:\n  " +
+                DETECT + " -h\n  " +
+                EVAULTE + " -h\n  " +
+                ANALYSE + " -h";
     }
 }

@@ -341,4 +341,18 @@ public class Util {
         };
         return matrix;
     }
+
+    /**
+     * Is number
+     * @param value
+     * @return
+     */
+    public static boolean isNumber(String value){
+        try {
+            Double.parseDouble(value);
+            return true;
+        }catch (Exception exp){
+            return false;
+        }
+    }
 }

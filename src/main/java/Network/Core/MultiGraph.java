@@ -40,7 +40,7 @@ public class MultiGraph extends BaseMatrix{
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
             Graph graph = (Graph) graphEntry.getValue();
-            Graph[] decomposedGraphs = (Graph[]) graph.decompose(partition);
+            Graph[] decomposedGraphs = graph.decompose(partition);
             subGraphs.put(typeId, decomposedGraphs);
             groupCount = decomposedGraphs.length; // reassigned redundantly!
         }

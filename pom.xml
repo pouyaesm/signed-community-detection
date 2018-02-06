@@ -20,15 +20,42 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Build an executable JAR -->
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <archive>
-                        <addClasspath>true</addClasspath>
-                        <mainClass>Main</mainClass>
-                    </archive>
+                    <minimizeJar>true</minimizeJar>
+                    <finalName>simap-${project.version}</finalName>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>Main</mainClass>
+                        </transformer>
+                    </transformers>
+                    <filters>
+                        <filter>
+                            <artifact>com.koloboke</artifact>
+                            <includes>
+                                <include>**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Obj*Map*/**</exclude>
+                                <exclude>**/*Char*/**</exclude>
+                                <exclude>**/*Short*/**</exclude>
+                                <exclude>**/*Byte*/**</exclude>
+                                <exclude>**/*Long*/**</exclude>
+                                <exclude>**/*Float*/**</exclude>
+                                <exclude>**/*Double*/**</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                 </configuration>
             </plugin>
         </plugins>
@@ -50,6 +77,11 @@
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
             <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.koloboke</groupId>
+            <artifactId>koloboke-impl-jdk8</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 </project>

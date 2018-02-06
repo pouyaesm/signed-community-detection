@@ -18,8 +18,9 @@ public class MatrixStatistics {
         // Find partitions count and initialize partitions size
         // when an entry is discarded, partitions "-1" exists in the input and must be excluded
         int hasDiscarded = Util.contains(-1, partition) ? 1 : 0;
-        statistics.count = Util.uniqueCount(partition) - hasDiscarded;
-        statistics.maxGroupId = Util.max(partition);
+        ArrayStatistics arrayStatistics = Util.arrayStatistics(partition);
+        statistics.count = arrayStatistics.uniqueCount - hasDiscarded;
+        statistics.maxGroupId = arrayStatistics.maxValue;
         statistics.cellCount = new int[statistics.maxGroupId + 1];
         statistics.cellValue = new float[statistics.maxGroupId + 1];
         statistics.positiveCellCount = new int[statistics.maxGroupId + 1];

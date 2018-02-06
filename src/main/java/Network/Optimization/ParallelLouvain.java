@@ -8,15 +8,27 @@ import Network.Core.MultiRunnable;
  */
 abstract public class ParallelLouvain extends Louvain {
 
-    public int[][] detect(Graph[] graphs, int foldCount, int threadCount){
+    /**
+     * Number of threads for parallel computing
+     */
+    private int threadCount;
+
+    /**
+     * Thread count is set to one by default
+     */
+    public ParallelLouvain(){
+        setThreadCount(1);
+    }
+
+    public int[][] detect(Graph[] graphs, int foldCount){
         int[][] initialPartitions = new int[graphs.length][];
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             initialPartitions[graphId] = getInitialPartition(graphs[graphId].getNodeCount());
         }
-        return detect(graphs, initialPartitions, foldCount, threadCount);
+        return detect(graphs, initialPartitions, foldCount);
     }
 
-    public int[][] detect(Graph[] graphs, int[][] initialPartitions, int foldCount, int threadCount){
+    public int[][] detect(Graph[] graphs, int[][] initialPartitions, int foldCount){
         MultiRunnable[] workers = new MultiRunnable[threadCount]; // one worker per thread
         Thread[] threads = new Thread[threadCount];
         for(int t = 0 ; t < threadCount ; t++){
@@ -60,4 +72,13 @@ abstract public class ParallelLouvain extends Louvain {
      * @return
      */
     abstract public ParallelLouvain newDetector();
+
+    public ParallelLouvain setThreadCount(int threadCount) {
+        this.threadCount = threadCount;
+        return this;
+    }
+
+    public int getThreadCount() {
+        return threadCount;
+    }
 }

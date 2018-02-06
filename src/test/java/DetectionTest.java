@@ -12,7 +12,7 @@ public class DetectionTest {
     public void testCPMDetection() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/3triads.txt", true);
         CPM cpmDetector = new CPM();
-        int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 0);
+        int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 5);
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         Assert.assertArrayEquals(expectedPartition, partition);
     }
@@ -44,8 +44,8 @@ public class DetectionTest {
         graphs[0] = GraphIO.readGraph("testCases/3triads.txt", true);
         graphs[1] = graphs[0].clone();
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
-        CPM cpmDetector = new CPM();
-        int[][] partitions = cpmDetector.detect(graphs, 0.05f, 0.5f, 0, 2);
+        CPM cpmDetector = (CPM) new CPM().setThreadCount(2);
+        int[][] partitions = cpmDetector.detect(graphs, 0.05f, 0.5f, 0);
         Assert.assertArrayEquals(expectedPartition, partitions[0]);
         Assert.assertArrayEquals(expectedPartition, partitions[1]);
     }

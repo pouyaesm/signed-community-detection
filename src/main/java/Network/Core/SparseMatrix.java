@@ -1,9 +1,12 @@
 package Network.Core;
 
+//import gnu.trove.map.hash.TIntIntHashMap;
+
 /**
  * Sparse column matrix
  */
 public class SparseMatrix extends BaseMatrix {
+
     /**
      * Input List matrix
      */
@@ -78,8 +81,8 @@ public class SparseMatrix extends BaseMatrix {
 
 
     public float getValue(int row, int column){
-        int rowId = listMatrix.getToNormal()[0][row];
-        int columnId = listMatrix.getToNormal()[1][column];
+        int rowId = listMatrix.getToNormal()[0].get(row);
+        int columnId = listMatrix.getToNormal()[1].get(column);
         int[] columns = columnIndices[rowId];
         for(int c = 0 ; c < columns.length ; c++){
             if(columns[c] == columnId){
@@ -116,7 +119,9 @@ public class SparseMatrix extends BaseMatrix {
         ListMatrix[] decomposedLists = getListMatrix().decompose(partition);
         SparseMatrix[] matrices = new SparseMatrix[decomposedLists.length];
         for(int m = 0 ; m < decomposedLists.length ; m++){
-            matrices[m] = newInstance().init(decomposedLists[m]);
+            matrices[m] = newInstance().init(
+                    decomposedLists[m].normalize(false, true)
+            );
         }
         return matrices;
     }

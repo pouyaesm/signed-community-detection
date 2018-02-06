@@ -1,7 +1,10 @@
 package Network.Core;
 
+import com.koloboke.collect.map.hash.HashIntIntMaps;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 public class UtilTest {
 
@@ -42,15 +45,21 @@ public class UtilTest {
         int[] ids1 = {3, 5, 3, 3, 1, 1};
         int[] ids2 = {1, 3, 3, 6};
         int[] expected = {-1, 2, -1, 0, -1, 1, 3};//3 -> 0, 5 -> 1, 1 -> 2, 6 -> 3
-        int[] normalizedIds = Util.normalizeIds(ids1, ids2);
-        Assert.assertArrayEquals(expected, normalizedIds);
+        Map<Integer, Integer> normalizedIds = Util.normalizeIds(ids1, ids2);
+        Assert.assertEquals(0, (int) normalizedIds.get(3));
+        Assert.assertEquals(1, (int) normalizedIds.get(5));
+        Assert.assertEquals(2, (int) normalizedIds.get(1));
+        Assert.assertEquals(3, (int) normalizedIds.get(6));
+        Assert.assertEquals(null, normalizedIds.get(0));
     }
 
     @Test
-    public void testUniqueCount(){
+    public void testArrayStatistics(){
         int[] values = {-1, 1, 2, -1, -1, 3, -1};
-        int uniqueCount = Util.uniqueCount(values);
-        Assert.assertEquals(4, uniqueCount);
+        ArrayStatistics statistics = Util.arrayStatistics(values);
+        Assert.assertEquals(4, statistics.uniqueCount);
+        Assert.assertEquals(-1, statistics.minValue);
+        Assert.assertEquals(3, statistics.maxValue);
     }
 
 
@@ -68,13 +77,14 @@ public class UtilTest {
         // Each index 0...size-1 must be present
         int[] permute = Util.permute(50);
         Assert.assertEquals("Each index must be present one and only once",
-                50, Util.uniqueCount(permute));
+                50, Util.arrayStatistics(permute).uniqueCount);
     }
 
-    /**
-     * Minimum maximum test
-     */
-    public void testMinMax(){
-
+    public void testHashMapClone(){
+        int[] keys = {0, 1, 2, 3, 4, 5};
+        int[] values = {2, 4, 6, 8, 10, 12};
+        Map<Integer, Integer> clone = Util.clone(HashIntIntMaps.newUpdatableMap(keys, values));
+        Assert.assertEquals(6, (int) clone.get(2));
+        Assert.assertEquals(12, (int) clone.get(5));
     }
 }

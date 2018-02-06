@@ -1,7 +1,9 @@
 import Network.Core.GraphIO;
 import Network.Core.Graph;
 import Network.Optimization.CPM;
+import com.koloboke.collect.map.hash.HashIntIntMaps;
 import org.apache.commons.cli.*;
+import java.util.Map;
 
 public class Main {
 
@@ -28,6 +30,11 @@ public class Main {
 //        for (String arg : args){
 ////            System.out.println(arg);
 ////        }
+//        TIntIntHashMap hashMap = new TIntIntHashMap(100);
+//        hashMap.put(10, 20);
+//        System.out.println(hashMap.get(10));
+        Map<Integer, Integer> hashMap = HashIntIntMaps.newUpdatableMap();
+        hashMap.put(1, 2);
         if(args.length == 0){
             System.out.println(getIntroduction());
             return;

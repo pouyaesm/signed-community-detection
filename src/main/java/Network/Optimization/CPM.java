@@ -18,10 +18,10 @@ public class CPM extends RosvallBergstrom {
 
     public int[] detect(Graph graph, float resolution, float alpha, int refineCount){
         Graph[] graphs = {graph};
-        return detect(graphs, resolution, alpha, refineCount, 1)[0];
+        return detect(graphs, resolution, alpha, refineCount)[0];
     }
 
-    public int[][] detect(Graph[] graphs, float resolution, float alpha, int refineCount, int threadCount){
+    public int[][] detect(Graph[] graphs, float resolution, float alpha, int refineCount){
         if(alpha < 0 || alpha > 1 || resolution < 0){
             try {
                 throw new Exception("alpha must be [0, 1], and resolution > 0");
@@ -43,7 +43,7 @@ public class CPM extends RosvallBergstrom {
             }
             graph.setAttributes(nodeSizes);
         }
-        int[][] bestPartition = partition(graphs,refineCount, threadCount);
+        int[][] bestPartition = partition(graphs,refineCount);
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
         }
@@ -244,7 +244,10 @@ public class CPM extends RosvallBergstrom {
 
     @Override
     public CPM newDetector() {
-        return new CPM().setResolution(resolution).setAlpha(alpha);
+        return (CPM) new CPM()
+                .setResolution(resolution)
+                .setAlpha(alpha)
+                .setThreadCount(getThreadCount());
     }
 
     public CPM setResolution(float resolution) {

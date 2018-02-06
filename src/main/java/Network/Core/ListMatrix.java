@@ -1,6 +1,7 @@
 package Network.Core;
-
-import java.util.HashSet;
+import com.koloboke.collect.map.IntIntMap;
+import com.koloboke.collect.map.hash.HashIntIntMaps;
+import java.util.Map;
 
 public class ListMatrix extends BaseMatrix{
 
@@ -18,7 +19,7 @@ public class ListMatrix extends BaseMatrix{
      * Maps raw id to normalized id
      * toNormal[0] is for rows and toNormal[1] is for columns
      */
-    protected int[][] toNormal;
+    protected Map<Integer, Integer>[] toNormal;
     /**
      * Maps normalized id to a raw id
      * toRaw[0] is for rows and toRow[1] is for columns
@@ -63,6 +64,12 @@ public class ListMatrix extends BaseMatrix{
      * If row and column indices are normalized to 0...L-1 without missing values
      */
     private boolean isNormalized;
+
+    private int minRowId;
+    private int maxRowId;
+
+    private int minColumnId;
+    private int maxColumnId;
 
     /**
      * @param rowColumns rowColumns[p] = [row, column]
@@ -248,32 +255,30 @@ public class ListMatrix extends BaseMatrix{
         int[] rows = clone ? new int[getRows().length] : getRows();
         int[] columns = clone ? new int[getColumns().length] : getColumns();
         // Normalize ids
-        int[][] toNormal = new int[2][]; // for rows and columns
+        Map<Integer, Integer>[] toNormal = new Map[2]; // for rows and columns
         int[][] toRaw = new int[2][];
         if(isIdShared()){
-            toNormal[ROW] = toNormal[COL] = Util.normalizeIds(getRows(), getColumns());
-            toRaw[ROW] = toRaw[COL] = new int[Util.max(toNormal[ROW]) + 1];
+            toNormal[ROW] = Util.normalizeIds(getRows(), getColumns());
+            toNormal[COL] = Util.clone(toNormal[ROW]);
+            toRaw[ROW] = new int[toNormal[ROW].size()];
+            toRaw[COL] = toRaw[ROW].clone();
         }else{
             toNormal[ROW] = Util.normalizeIds(getRows());
             toNormal[COL] = Util.normalizeIds(getColumns());
-            toRaw[ROW] = new int[Util.max(toNormal[ROW]) + 1];
-            toRaw[COL] = new int[Util.max(toNormal[COL]) + 1];
+            toRaw[ROW] = new int[toNormal[ROW].size()]; // assuming ids are mapped to 0...N-1
+            toRaw[COL] = new int[toNormal[COL].size()];
         }
         // Change row and column ids from raw to normal
         for(int p = 0 ; p < rows.length ; p++){
-            rows[p] = toNormal[ROW][getRows()[p]];
+            rows[p] = toNormal[ROW].get(getRows()[p]);
         }
         for(int p = 0 ; p < rows.length ; p++){
-            columns[p] = toNormal[COL][getColumns()[p]];
+            columns[p] = toNormal[COL].get(getColumns()[p]);
         }
         // Construct the toRaw id mapper for rows and columns
         for(int dim = 0 ; dim < 2 ; dim++){
-            for(int rawId = 0 ; rawId < toNormal[dim].length ; rawId++){
-                int normalId = toNormal[dim][rawId];
-                if(normalId != -1){
-                    toRaw[dim][normalId] = rawId;
-                }
-            }
+            final int[] toRawDim = toRaw[dim];
+            toNormal[dim].forEach((rawId, normalId) -> toRawDim[normalId] = rawId);
         }
         // Return the value
         if(clone){
@@ -281,6 +286,10 @@ public class ListMatrix extends BaseMatrix{
                     .setMaps(toNormal, toRaw)
                     .setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
         }else{
+            // Change (min, max) value of row and column ids to normalized values
+            minRowId = minColumnId = 0;
+            maxRowId = toRaw[ROW].length - 1;
+            maxColumnId = toRaw[COL].length - 1;
             setMaps(toNormal, toRaw);
             setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
             return this;
@@ -289,25 +298,29 @@ public class ListMatrix extends BaseMatrix{
 
     /**
      * Normalize the row and column ids to 0...L-1 without missing values
-     * Also map the normalized ids back to existing raw ids (if any) before normalization,
-     * This is useful for hierarchical matrices which shared raw ids
+     * Also map the normalized ids back to given raw ids (if any),
+     * This is useful for hierarchical matrices which may point to the same entity ids
      * @param clone
-     * @param keepOldRawIds
+     * @param mapToOldIds
      * @return
      */
-    public ListMatrix normalize(boolean clone, boolean keepOldRawIds){
+    public ListMatrix normalize(boolean clone, boolean mapToOldIds){
         int[][] oldRawIds = getToRaw();
         ListMatrix normalizedList = normalize(clone);
-        if(oldRawIds == null || !keepOldRawIds){
+        if(oldRawIds == null || !mapToOldIds){
             return normalizedList;
         }
-        // Example: [3, 4, 5] -> [0, 1, 2], [1, 2] -> [0, 1]
+        // Example: [3, 4, 5] -> [0, 1, 2], then sub matrix [1, 2] -> [0, 1]
         // We want to map [0, 1] back to [4, 5] instead of [1, 2]
         int[][] newRawIds = normalizedList.getToRaw();
+        Map<Integer, Integer>[] newNormalIds = normalizedList.getToNormal();
+        newNormalIds[ROW].clear();
+        newNormalIds[COL].clear();
         for(int dim = 0 ; dim < 2 ; dim++){
             for(int normalizedId = 0 ; normalizedId < newRawIds[dim].length ; normalizedId++){
-                int newRawId = newRawIds[dim][normalizedId];
-                newRawIds[dim][normalizedId] = oldRawIds[dim][newRawId];
+                int oldRawId = oldRawIds[dim][newRawIds[dim][normalizedId]];
+                newRawIds[dim][normalizedId] = oldRawId;
+                newNormalIds[dim].put(oldRawId, normalizedId);
             }
         }
         return normalizedList;
@@ -374,9 +387,9 @@ public class ListMatrix extends BaseMatrix{
         }
         // swap toNormal and toRaw id maps between row and column
         if(isNormalized()){
-            int[] toNormalRowTemp = getToNormal()[ROW];
+            Map<Integer, Integer> toNormalRowTemp = getToNormal()[ROW];
             int[] toRawRowTemp = getToRaw()[ROW];
-            transposedList.toNormal = new int[2][];
+            transposedList.toNormal = new Map[2];
             transposedList.toRaw = new int[2][];
             transposedList.toNormal[ROW] = getToNormal()[COL];
             transposedList.toNormal[COL] = toNormalRowTemp;
@@ -427,15 +440,18 @@ public class ListMatrix extends BaseMatrix{
                 occupied[groupId]++;
             }
         }
-        // Decomposition of a sorted/unique/ascending list remains sorted/unique/ascending
-        // Normal/Row mappings remain the same after decomposition, so they are set for all
-        // partitions as a SHARED resource
+        /*
+            Decomposition of a sorted/unique/ascending list remains sorted/unique/ascending
+            Parents' toRaw/toNormal mapping is shared with subGraphs, they must be cloned
+            or recreated if a change is required, specially for toRaw as it must be changed
+            per normalization
+         */
         ListMatrix[] lists = new ListMatrix[groupCount];
         for(int pr = 0 ; pr < rows.length ; pr++){
             lists[pr] = new ListMatrix()
                     .init(rows[pr], columns[pr], values[pr], isIdShared())
                     .setStatus(isSorted(), isUnique(), false, isIdAscending(), getSortMode())
-                    .setMaps(getToNormal(), getToRaw()); // shared maps
+                    .setMaps(getToNormal(), getToRaw());
         }
         return lists;
     }
@@ -457,28 +473,33 @@ public class ListMatrix extends BaseMatrix{
         int[] rows = new int[validPairs];
         int[] columns = new int[validPairs];
         float[] values = new float[validPairs];
-        int[] normalGroupId = Util.normalizeIds(partition);
-        int[][] toRaw = new int[2][]; // map id of row/columns to their raw (unNormalized) group id
-        int[][] toNormal = new int[2][]; // raw group ids to normalized group ids used as row/column ids
-        toRaw[ROW] = toRaw[COL] = new int[statistics.count];
-        toNormal[ROW] = new int[statistics.maxGroupId + 1];
-        toNormal[COL] = new int[statistics.maxGroupId + 1];
+        Map<Integer, Integer> normalGroupId = Util.normalizeIds(partition);
+        // map id of row/columns to their raw (unNormalized) row id
+        int[][] toRaw = new int[2][];
+        toRaw[ROW] = new int[statistics.count];
+        toRaw[COL] = new int[statistics.count];
+        // raw ids to normalized row/column ids (group ids)
+        Map<Integer, Integer>[] toNormal = new Map[2];
+        toNormal[ROW] = HashIntIntMaps.newUpdatableMap(statistics.maxGroupId + 1);
+        toNormal[COL] = HashIntIntMaps.newUpdatableMap(statistics.maxGroupId + 1);
         int insertAt = 0;
         for(int p = 0 ; p < allRows.length ; p++){
-            int rowRawGroupId = partition[allRows[p]];
-            int columnRawGroupId = partition[allColumns[p]];
+            int rowId = allRows[p];
+            int columnId = allColumns[p];
+            int rowRawGroupId = partition[rowId];
+            int columnRawGroupId = partition[columnId];
             if(rowRawGroupId < 0 || columnRawGroupId < 0){
                 continue; // pair is discarded by the partition
             }
-            int rowGroupId = normalGroupId[rowRawGroupId];
-            int columnGroupId = normalGroupId[columnRawGroupId];
+            int rowGroupId = normalGroupId.get(rowRawGroupId);
+            int columnGroupId = normalGroupId.get(columnRawGroupId);
             rows[insertAt] = rowGroupId;
             columns[insertAt] = columnGroupId;
             values[insertAt] = allValues[p];
-            toRaw[ROW][rowGroupId] = rowRawGroupId;
+            toRaw[ROW][rowGroupId] = rowRawGroupId; // row points to its un-normalized group id
             toRaw[COL][columnGroupId] = columnRawGroupId;
-            toNormal[ROW][rowRawGroupId] = rowGroupId;
-            toNormal[COL][columnRawGroupId] = columnGroupId;
+            toNormal[ROW].put(rowRawGroupId, rowGroupId);
+            toNormal[COL].put(columnRawGroupId, columnGroupId);
             insertAt++;
         }
         ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
@@ -534,15 +555,15 @@ public class ListMatrix extends BaseMatrix{
      * @return
      */
     public ListMatrix symmetrize(){
-        HashSet<Integer> visitedCell = new HashSet<>(rows.length);
+        Map<Integer, Integer> visitedCell = HashIntIntMaps.newUpdatableMap(2 * rows.length);
         int idRange = Util.max(rows, columns) + 1;
         int cellCount = 0;
         for(int p = 0 ; p < rows.length ; p++){
             int uniqueId = idRange * rows[p] + columns[p];
-            if(!visitedCell.contains(uniqueId)){ // mark both the cell and its mirror
+            if(!visitedCell.containsKey(uniqueId)){ // mark both the cell and its mirror
                 int mirrorUniqueId = idRange * columns[p] + rows[p];
-                visitedCell.add(uniqueId);
-                visitedCell.add(mirrorUniqueId);
+                visitedCell.put(uniqueId, 1);
+                visitedCell.put(mirrorUniqueId, 1);
                 cellCount++;
             }
         }
@@ -554,7 +575,7 @@ public class ListMatrix extends BaseMatrix{
         int insertAt = 0;
         for(int p = 0 ; p < rows.length ; p++){
             int uniqueId = idRange * rows[p] + columns[p];
-            if(!visitedCell.contains(uniqueId)){
+            if(!visitedCell.containsKey(uniqueId)){
                 symRows[insertAt] = rows[p];
                 symColumns[insertAt] = columns[p];
                 symValues[insertAt] = values[p];
@@ -565,8 +586,8 @@ public class ListMatrix extends BaseMatrix{
                 insertAt++;
                 // Mark as visited
                 int mirrorUniqueId = idRange * columns[p] + rows[p];
-                visitedCell.add(uniqueId);
-                visitedCell.add(mirrorUniqueId);
+                visitedCell.put(uniqueId, 1);
+                visitedCell.put(mirrorUniqueId, 1);
             }
         }
         // This operation breaks id sort but guarantees uniqueness of cells, and ids are not changed
@@ -616,10 +637,10 @@ public class ListMatrix extends BaseMatrix{
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         listMatrix.toRaw = new int[2][];
-        listMatrix.toNormal = new int[2][];
+        listMatrix.toNormal = new Map[2];
         for(int dim = 0 ; dim < 2 ; dim++){
             listMatrix.toRaw[dim] = toRaw[dim].clone();
-            listMatrix.toNormal[dim] = toNormal[dim].clone();
+            listMatrix.toNormal[dim] = toNormal[dim];
         }
         return listMatrix;
     }
@@ -629,10 +650,19 @@ public class ListMatrix extends BaseMatrix{
      */
     private void calculateCounts(boolean isIdShared){
         if(isIdShared){
-            this.rowCount = this.columnCount = Util.uniqueCount(rows, columns);
+            ArrayStatistics statistics = Util.arrayStatistics(rows, columns);
+            this.rowCount = this.columnCount = statistics.uniqueCount;
+            this.minRowId = this.minColumnId = statistics.minValue;
+            this.maxRowId = this.maxColumnId = statistics.maxValue;
         }else{
-            this.rowCount = Util.uniqueCount(rows);
-            this.columnCount = Util.uniqueCount(columns);
+            ArrayStatistics rowStatistics = Util.arrayStatistics(rows);
+            this.rowCount = rowStatistics.uniqueCount;
+            this.minRowId = rowStatistics.minValue;
+            this.maxRowId = rowStatistics.maxValue;
+            ArrayStatistics columnStatistics = Util.arrayStatistics(columns);
+            this.columnCount = columnStatistics.uniqueCount;
+            this.minColumnId = columnStatistics.minValue;
+            this.maxColumnId = columnStatistics.maxValue;
         }
     }
 
@@ -654,7 +684,7 @@ public class ListMatrix extends BaseMatrix{
         return new ListMatrix();
     }
 
-    public ListMatrix setMaps(int[][] toNormal, int[][] toRaw){
+    public ListMatrix setMaps(Map<Integer, Integer>[] toNormal, int[][] toRaw){
         this.toNormal = toNormal;
         this.toRaw = toRaw;
         return this;
@@ -687,6 +717,14 @@ public class ListMatrix extends BaseMatrix{
         return this;
     }
 
+    public int getMaxColumnId() {
+        return maxColumnId;
+    }
+
+    public int getMaxRowId() {
+        return maxRowId;
+    }
+
     public boolean isSorted() {
         return isSorted;
     }
@@ -711,7 +749,7 @@ public class ListMatrix extends BaseMatrix{
         return sortMode;
     }
 
-    public int[][] getToNormal() {
+    public Map<Integer, Integer>[] getToNormal() {
         return toNormal;
     }
 

@@ -1,5 +1,11 @@
 package Network.Core;
 
+import com.koloboke.collect.map.IntIntMap;
+import com.koloboke.collect.map.hash.HashIntIntMaps;
+
+import java.util.Iterator;
+import java.util.Map;
+
 public class Util {
     /**
      * Maximum of an integer in all given arrays
@@ -38,7 +44,7 @@ public class Util {
      * @param values
      * @return
      */
-    public static int uniqueCount(int discardedValue, int valueOffset, int size, int[]...values){
+    public static int arrayStatistics(int discardedValue, int valueOffset, int size, int[]...values){
         boolean[] visitedValues = new boolean[size];
         int uniqueCount = 0;
         for(int a = 0 ; a < values.length ; a++) {
@@ -53,16 +59,19 @@ public class Util {
         return uniqueCount;
     }
 
-    public static int uniqueCount(int[]...values) {
-        int minValue = Util.min(values);
-        int maxValue = Util.max(values);
-        return uniqueCount(Integer.MIN_VALUE,  - minValue, maxValue - minValue + 1, values);
+    public static ArrayStatistics arrayStatistics(int[]...values) {
+        ArrayStatistics statistics = new ArrayStatistics();
+        statistics.minValue = Util.min(values);
+        statistics.maxValue = Util.max(values);
+        statistics.uniqueCount = arrayStatistics(Integer.MIN_VALUE,
+                - statistics.minValue, statistics.maxValue - statistics.minValue + 1, values);
+        return statistics;
     }
 
-    public static int uniqueCount(int[] values){
+    public static ArrayStatistics arrayStatistics(int[] values){
         int[][] arrays = new int[1][];
         arrays[0] = values;
-        return uniqueCount(arrays);
+        return arrayStatistics(arrays);
     }
 
     /**
@@ -94,7 +103,7 @@ public class Util {
      * @param ids
      * @return
      */
-    public static int[] normalizeIds(int[] ids) {
+    public static Map<Integer, Integer> normalizeIds(int[] ids) {
         int[][] idsArray = new int[1][ids.length];
         idsArray[0] = ids;
         return normalizeIds(idsArray);
@@ -132,20 +141,19 @@ public class Util {
      * @param ids
      * @return
      */
-    public static int[] normalizeIds(int[]... ids) {
+    public static Map<Integer, Integer> normalizeIds(int[]... ids) {
         int maxRawId = Integer.MIN_VALUE;
         // maximum raw (un-normalized) id found among all the arrays
         for (int a = 0; a < ids.length; a++) {
             maxRawId = Math.max(Util.max(ids[a]), maxRawId);
         }
-        // initialize normal ids to -1 so as to distinguish them from the first normal index "0"
-        int[] toNormal = Util.intArray(maxRawId + 1, -1);
+        Map<Integer, Integer> toNormal = HashIntIntMaps.newUpdatableMap(maxRawId + 1);
         int counter = 0;
         for (int a = 0; a < ids.length; a++) {
             for (int i = 0; i < ids[a].length; i++) {
                 int rawId = ids[a][i];
-                if (rawId >= 0 && toNormal[rawId] == -1) {
-                    toNormal[rawId] = counter++; // starts from 0
+                if (rawId >= 0 && !toNormal.containsKey(rawId)) {
+                    toNormal.put(rawId, counter++); // starts from 0
                 }
             }
         }
@@ -169,6 +177,19 @@ public class Util {
             permutation[select] = p;
         }
         return permutation;
+    }
+
+    /**
+     * Sum of values
+     * @param values
+     * @return
+     */
+    public static int sum(int[] values){
+        int sum = 0;
+        for(float value : values){
+            sum += value;
+        }
+        return sum;
     }
 
     /**
@@ -354,5 +375,16 @@ public class Util {
         }catch (Exception exp){
             return false;
         }
+    }
+
+    /**
+     * Clone the map object
+     * @param map
+     * @return
+     */
+    public static Map<Integer, Integer> clone(Map<Integer, Integer> map){
+        Map<Integer, Integer> clone = HashIntIntMaps.newUpdatableMap(map.size());
+        map.forEach(clone::put);
+        return clone;
     }
 }

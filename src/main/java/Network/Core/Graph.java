@@ -1,5 +1,7 @@
 package Network.Core;
 
+import java.util.Map;
+
 import static Network.Core.ListMatrix.ROW;
 
 public class Graph extends SparseMatrix {
@@ -19,22 +21,31 @@ public class Graph extends SparseMatrix {
      */
     @Override
     public Graph[] decompose(int[] partition){
-        Graph[] graphs = (Graph[]) super.decompose(partition);
-        for(int pr = 0 ; pr < graphs.length; pr++){
-            ListMatrix list = graphs[pr].getListMatrix().normalize(false, true);
+        SparseMatrix[] sparseMatrices = super.decompose(partition);
+        Graph[] subGraphs = new Graph[sparseMatrices.length];
+        for(int pr = 0 ; pr < subGraphs.length; pr++){
+            subGraphs[pr] = (Graph) sparseMatrices[pr];
+            ListMatrix subMatrix = subGraphs[pr].getListMatrix();
             if(!hasAttributes()){
                 continue; // no node attributes to copy
             }
             // Copy node attributes to new partitions
-            int nodeCount = list.getRowCount();
-            float[][] attributes = new float[nodeCount][];
-            for(int normalizedId = 0 ; normalizedId < nodeCount ; normalizedId++){
-                int rawId = list.getToRaw()[0][normalizedId];
-                attributes[normalizedId] = getAttributes()[rawId].clone();
+            int subNodeCount = subMatrix.getRowCount();
+            float[][] attributes = new float[subNodeCount][];
+            Map<Integer, Integer> toNormal = getListMatrix().getToNormal()[0];
+            for(int normalizedId = 0 ; normalizedId < subNodeCount ; normalizedId++){
+                /*
+                    raw id of normalized nodeId of sub-graphs
+                    are mapped to the same rawId as their parent graph
+                    so their raw id can be mapped back to nodeIds of this parent
+                    using parent's toNormal
+                 */
+                int rawId = subMatrix.getToRaw()[0][normalizedId];
+                attributes[normalizedId] = getAttributes()[toNormal.get(rawId)].clone();
             }
-            graphs[pr].setAttributes(attributes);
+            subGraphs[pr].setAttributes(attributes);
         }
-        return graphs;
+        return subGraphs;
     }
 
     /**
@@ -55,9 +66,9 @@ public class Graph extends SparseMatrix {
         float[][] attributes = new float[groupCount][attributeCount];
         // Aggregate attribute of nodes into their group node
         // Assumption: superNodes are normalized version of their groupIds in partition
-        int[] groupToSuperGroupId = listMatrix.getToNormal()[ROW];
+        Map<Integer, Integer> groupToSuperGroup = listMatrix.getToNormal()[ROW];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            int superGroupId = groupToSuperGroupId[partition[nodeId]];
+            int superGroupId = groupToSuperGroup.get(partition[nodeId]);
             for(int attr = 0 ; attr < attributeCount ; attr++){
                 attributes[superGroupId][attr] += this.attributes[nodeId][attr];
             }
@@ -112,6 +123,10 @@ public class Graph extends SparseMatrix {
      */
     public int getNodeCount(){
         return hasList() ? getListMatrix().getRowCount() : 0;
+    }
+
+    public int getEdgeCount(){
+        return hasList() ? getListMatrix().getRows().length : 0;
     }
 
     public Graph setAttributes(float[][] attributes) {

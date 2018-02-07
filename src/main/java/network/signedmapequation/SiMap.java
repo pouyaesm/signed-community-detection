@@ -19,20 +19,20 @@ public class SiMap {
         SiMapStatistics statistics = reWeight(graph, partition);
         // Teleport probabilities from each node to guarantee stationary state of G * p = p
         int nodeCount = statistics.transition.getNodeCount();
-        statistics.teleport = new float[nodeCount];
+        statistics.teleport = new double[nodeCount];
         if(cpMapParameters.TELEPORT_TO_NODE){
-            float probability = 1.0f / nodeCount;
+            double probability = 1.0f / nodeCount;
             for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
                 statistics.teleport[nodeId] = probability;
             }
         }else{
             if(cpMapParameters.USE_RECORDED){
-                float totalInWeight = Util.sum(statistics.inWeight);
+                double totalInWeight = Util.sum(statistics.inWeight);
                 for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
                     statistics.teleport[nodeId] = statistics.inWeight[nodeId] / totalInWeight;
                 }
             }else{
-                float totalOutWeight = Util.sum(statistics.outWeight);
+                double totalOutWeight = Util.sum(statistics.outWeight);
                 for(int nodeId = 0 ; nodeId <  nodeCount; nodeId++){
                     statistics.teleport[nodeId] = statistics.outWeight[nodeId] / totalOutWeight;
                 }
@@ -96,22 +96,22 @@ public class SiMap {
             outCoefficient: positive external re-weight coefficients from nodeId to neighborGroupId
             Node: this queue will be reset after processing each nodeId, for the next nodeId
         */
-        float[][] groupQueue = new float[groupRangeId][];
+        double[][] groupQueue = new double[groupRangeId][];
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         /*
             neighborGroupQueueIndex[ng] = q means group ng is a neighbor of current group g
             and it is placed in position q of groupQueue
          */
         int[] neighborGroupQueueIndex = Util.intArray(groupRangeId, -1);
-        float[] inPositive = new float[nodeCount]; // node's positive weights inside its group
-        float[] inNegative = new float[nodeCount]; // node's negative weights inside its group
-        float[] totalPositive = new float[nodeCount]; // node's total positive weight
-        float[] backProbability = new float[nodeCount]; // backward probability of each node toward its group
-        statistics.negativeTeleport = new float[nodeCount]; // negative teleport probability emitted from each node
-        statistics.inWeight = new float[nodeCount]; // total weight toward nodeId after re-weight
-        statistics.outWeight = new float[nodeCount]; // total weight from nodeId after re-weight
+        double[] inPositive = new double[nodeCount]; // node's positive weights inside its group
+        double[] inNegative = new double[nodeCount]; // node's negative weights inside its group
+        double[] totalPositive = new double[nodeCount]; // node's total positive weight
+        double[] backProbability = new double[nodeCount]; // backward probability of each node toward its group
+        statistics.negativeTeleport = new double[nodeCount]; // negative teleport probability emitted from each node
+        statistics.inWeight = new double[nodeCount]; // total weight toward nodeId after re-weight
+        statistics.outWeight = new double[nodeCount]; // total weight from nodeId after re-weight
         // inCoefficient: positive internal re-weight coefficients
-        float[] inCoefficient = new float[nodeCount];
+        double[] inCoefficient = new double[nodeCount];
         // Use the transition weights for re-weighting and generation of re-weighted graph
         float[][] reWeights = statistics.transition.getValues();
         for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
@@ -130,7 +130,7 @@ public class SiMap {
                     // first time this neighbor is visited ?
                     int neighborQueueIndex;
                     if(neighborGroupQueueIndex[neighborGroupId] == -1){
-                        if(groupQueue[queueHead] == null) groupQueue[queueHead] = new float[4];
+                        if(groupQueue[queueHead] == null) groupQueue[queueHead] = new double[4];
                         groupQueue[queueHead][0] = neighborGroupId;
                         neighborQueueIndex = neighborGroupQueueIndex[neighborGroupId] = queueHead;
                         queueHead++;
@@ -143,9 +143,9 @@ public class SiMap {
             } // for nodeId's all neighbors
             // Calculate backward probability of nodeId and outCoefficients of its neighbor groups
             for(int queueIndex = 0 ; queueIndex < queueHead ; queueIndex++){
-                float[] neighborStatistics = groupQueue[queueIndex];
-                float positiveWeight = neighborStatistics[1];
-                float negativeWeight = neighborStatistics[2];
+                double[] neighborStatistics = groupQueue[queueIndex];
+                double positiveWeight = neighborStatistics[1];
+                double negativeWeight = neighborStatistics[2];
                 if(positiveWeight > 0){
                     backProbability[nodeId] += Math.min(positiveWeight, negativeWeight) / totalPositive[nodeId];
                     neighborStatistics[3] = Math.max(1 - negativeWeight / positiveWeight, 0);
@@ -161,7 +161,7 @@ public class SiMap {
                 inCoefficient[nodeId] = (1 + totalPositive[nodeId]
                         * backProbability[nodeId] / inPositive[nodeId])
                         * Math.max(1 - inNegative[nodeId] / inPositive[nodeId], 0);
-                float internalProbability = inPositive[nodeId] / totalPositive[nodeId];
+                double internalProbability = inPositive[nodeId] / totalPositive[nodeId];
                 statistics.negativeTeleport[nodeId] += (1 - inCoefficient[nodeId]) * internalProbability;
             }
             // Re-weight the transition probability for (nodeId, neighborId) transitions
@@ -171,15 +171,15 @@ public class SiMap {
                 if(weight <= 0) continue; // only positive weights are re-weighted
                 int neighborId = neighbors[n];
                 int neighborGroupId = partition[neighborId];
-                float probability;
+                double probability;
                 if(groupId == neighborGroupId){ // internal positive
                     probability = weight * inCoefficient[nodeId];
                 }else{ // external positive
-                    float outCoefficient = groupQueue[neighborGroupQueueIndex[neighborGroupId]][3];
+                    double outCoefficient = groupQueue[neighborGroupQueueIndex[neighborGroupId]][3];
                     probability =  weight * outCoefficient;
                 }
-                reWeight[n] = probability; // re-weighted probability (nodeId, neighborId)
-                float newWeight = probability * totalPositive[nodeId];
+                reWeight[n] = (float) probability; // re-weighted probability (nodeId, neighborId)
+                double newWeight = probability * totalPositive[nodeId];
                 statistics.outWeight[nodeId] += newWeight;
                 statistics.inWeight[neighborId] += newWeight;
             }
@@ -193,10 +193,10 @@ public class SiMap {
             queueHead = 0; //reset queue header for next nodeId
         } // for each node
         // Total weight of negative teleports emitted
-        float negativeTeleport = 0;
+        double negativeTeleport = 0;
         for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
             //weight of  negative teleport from nodeId
-            float teleportWeight = totalPositive[nodeId] * statistics.negativeTeleport[nodeId];
+            double teleportWeight = totalPositive[nodeId] * statistics.negativeTeleport[nodeId];
             if(teleportWeight > 0) {
                 negativeTeleport += teleportWeight;
                 // Add negative teleport to out-weights of nodeId

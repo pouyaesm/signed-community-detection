@@ -25,9 +25,9 @@ public class StatisticsTest {
         PartitionStatistics statistics = Statistics.partition(partition, listMatrix);
         int[] expectedNodeCount = {3, 1};
         int[] expectedEdgeCount = {6, 0}; // each symmetric edge is counted twice
-        float[] expectedWeight = {2, 0}; // 2 + 2 - 2 for {1, 2, 3}
-        float [] expectedPositiveWeight = {4, 0};
-        float [] expectedNegativeWeight = {2, 0};
+        double[] expectedWeight = {2, 0}; // 2 + 2 - 2 for {1, 2, 3}
+        double [] expectedPositiveWeight = {4, 0};
+        double [] expectedNegativeWeight = {2, 0};
         Assert.assertArrayEquals(expectedNodeCount, statistics.size);
         Assert.assertArrayEquals(expectedEdgeCount, statistics.cellCount);
         Assert.assertArrayEquals(expectedPositiveWeight, statistics.positiveCellValue, 0f);

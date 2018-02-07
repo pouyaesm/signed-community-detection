@@ -52,11 +52,11 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    protected float greedy(Graph graph, Graph transpose, int[] partition) {
+    protected double greedy(Graph graph, Graph transpose, int[] partition) {
         int groupIdRange = Util.max(partition) + 1;
         int N = graph.getNodeCount();
         // Queue of neighbor groups and their statistics (groupId, pCpK, pKCp, nCpK, nKCp)
-        float[][] groupQueue = new float[groupIdRange][];
+        double[][] groupQueue = new double[groupIdRange][];
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         // groupNeighbor[ng] = q >= 0 means group ng is a neighbor of current group g
         // and it is placed in position q of queue
@@ -74,7 +74,7 @@ public class CPM extends RosvallBergstrom {
         CPMParameters pPositive = new CPMParameters();
         CPMParameters pNegative = new CPMParameters();
         boolean hamImproved = true; // whether objective is improved during a pass or not
-        float hamChange = 0; // total change of hamiltonian objective
+        double hamChange = 0; // total change of hamiltonian objective
         float movedNodes = N; // number of moved nodes into other groups (0 if groups stay the same)
         // At least 1% node movement is expected to redo the merge pass
 
@@ -111,14 +111,11 @@ public class CPM extends RosvallBergstrom {
                     float[] linkValues = outOrIn.getValues(nodeId);
                     for(int n = 0 ; n < neighbors.length ; n++){
                         int neighborId = neighbors[n];
-                        float linkValue = linkValues[n];
+                        double linkValue = linkValues[n];
                         int neighborGroupId = partition[neighborId];
                         if(nodeId == neighborId){ // self loop (will be counted two times)
-                            if(linkValue > 0){
-                                pPositive.Kself += linkValue / 2;
-                            }else{
-                                pNegative.Kself -= linkValue / 2;
-                            }
+                            if(linkValue > 0) pPositive.Kself = linkValue;
+                            else pNegative.Kself = -linkValue;
                         }
                         if(groupId == neighborGroupId){ // link inside the group
                             if(direction == outward){ // from node to its group
@@ -132,7 +129,7 @@ public class CPM extends RosvallBergstrom {
                             // first time this neighbor is visited ?
                             int neighborQueuePosition;
                             if(neighborGroupQueueIndex[neighborGroupId] == -1){
-                                if(groupQueue[queueHead] == null) groupQueue[queueHead] = new float[5];
+                                if(groupQueue[queueHead] == null) groupQueue[queueHead] = new double[5];
                                 groupQueue[queueHead][0] = neighborGroupId;
                                 neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId] = queueHead;
                                 queueHead++;
@@ -170,7 +167,7 @@ public class CPM extends RosvallBergstrom {
                     groupQueue[queueIndex][3] += pNegative.Kself;
                 }
                 // Hamiltonian objective change due to movement of nodeId to neighbor groups
-                float bestChange = 0;
+                double bestChange = 0;
                 int bestNeighborGroupId = -1;
                 for(int queueIndex = 0 ; queueIndex < queueHead ; queueIndex++){
                     int neighborGroupId = (int) groupQueue[queueIndex][0];
@@ -180,9 +177,9 @@ public class CPM extends RosvallBergstrom {
                     pNegative.CpK = groupQueue[queueIndex][3];
                     // add node sub-node groupCount to neighbor group temporarily for local change calculation
                     pPositive.NCp = pNegative.NCp = nodeCount[neighborGroupId] + nodeSize;
-                    float pChange = localChange(pPositive);
-                    float nChange = localChange(pNegative);
-                    float change = this.alpha * pChange - (1 - this.alpha) * nChange;
+                    double pChange = localChange(pPositive);
+                    double nChange = localChange(pNegative);
+                    double change = this.alpha * pChange - (1 - this.alpha) * nChange;
                     if(change < bestChange){
                         bestChange = change;
                         bestNeighborGroupId = neighborGroupId;
@@ -212,9 +209,9 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    protected float localChange(ObjectiveParameters parameters) {
+    protected double localChange(ObjectiveParameters parameters) {
         CPMParameters p = (CPMParameters) parameters;
-        float change = p.KC + p.CK - p.KCp - p.CpK + 2 * p.resolution * p.Nk * (p.NCp - p.NC);
+        double change = p.KC + p.CK - p.KCp - p.CpK + 2.0 * p.resolution * p.Nk * (p.NCp - p.NC);
         return change;
     }
 

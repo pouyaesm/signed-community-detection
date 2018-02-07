@@ -22,11 +22,11 @@ public class Statistics {
         statistics.groupCount = arrayStatistics.uniqueCount - hasDiscarded;
         statistics.maxGroupId = arrayStatistics.maxValue;
         statistics.cellCount = new int[statistics.maxGroupId + 1];
-        statistics.cellValue = new float[statistics.maxGroupId + 1];
+        statistics.cellValue = new double[statistics.maxGroupId + 1];
         statistics.positiveCellCount = new int[statistics.maxGroupId + 1];
-        statistics.positiveCellValue = new float[statistics.maxGroupId + 1];
+        statistics.positiveCellValue = new double[statistics.maxGroupId + 1];
         statistics.negativeCellCount = new int[statistics.maxGroupId + 1];
-        statistics.negativeCellValue = new float[statistics.maxGroupId + 1];
+        statistics.negativeCellValue = new double[statistics.maxGroupId + 1];
         statistics.size = arrayStatistics.frequency;
         // Calculate number of pairs per partitions
         for(int p = 0 ; p < rows.length ; p++){

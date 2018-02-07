@@ -30,7 +30,7 @@ public class Stationary {
      * @return
      */
     public static double[] nodeUnRecorded(Graph transitionMatrix, double[] recorded,
-                                          float[] negativeTeleport){
+                                          double[] negativeTeleport){
         double[] unrecorded = new double[recorded.length]; // unRecorded node visit probability
         // Calculate P one step further without considering the teleportation
         for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
@@ -60,8 +60,8 @@ public class Stationary {
      * @param minDistance minimum distance of two consecutive distributions to stop
      * @return
      */
-    public static double[] nodeRecorded(Graph transitionMatrix, float[] teleport,
-                                        float[] negativeTeleport, double tau, double minDistance){
+    public static double[] nodeRecorded(Graph transitionMatrix, double[] teleport,
+                                        double[] negativeTeleport, double tau, double minDistance){
         int nodeCount = transitionMatrix.getNodeCount();
         double[] Pt = Util.doubleArray(nodeCount, 1.0f / transitionMatrix.getNodeCount()); // distribution at t-th step
         double[] Pt_1 = Pt.clone(); // distribution at (t-1)-th step

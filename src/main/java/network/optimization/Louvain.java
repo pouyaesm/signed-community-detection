@@ -58,7 +58,7 @@ abstract public class Louvain implements Runnable{
         int[] partition = initialPartition.clone();
         if(partition.length == 1) return partition;
         Graph transpose = (Graph) graph.transpose(true);
-        float improvement = greedy(graph, transpose, partition);
+        double improvement = greedy(graph, transpose, partition);
         if(improvement <= 0.0 || foldCount == 0.0){
             // No further improvement was made by coarse-grain
             // or no further coarse-grain is needed
@@ -103,14 +103,14 @@ abstract public class Louvain implements Runnable{
      * @param partition this is the initial partition, changes are applied on this
      * @return improvement in objective function
      */
-    abstract protected float greedy(Graph graph, Graph transpose, int[] partition);
+    abstract protected double greedy(Graph graph, Graph transpose, int[] partition);
 
     /**
      * Local change in the objective function by moving nodes between groups
      * @param parameters
      * @return
      */
-    protected float localChange(ObjectiveParameters parameters){
+    protected double localChange(ObjectiveParameters parameters){
         return 0;
     }
 

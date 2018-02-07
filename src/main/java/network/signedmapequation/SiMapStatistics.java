@@ -7,22 +7,22 @@ public class SiMapStatistics {
     /**
      * inWeight[nodeId] is the total weight of nodeId toward the inside of its group
      */
-    public float[] inWeight;
+    public double[] inWeight;
 
     /**
      * outWeight[nodeId] is the total weight of nodeId toward the outside of its group
      */
-    public float[] outWeight;
+    public double[] outWeight;
     /**
      * negativeTeleport[nodeId] is the probability of random jump from nodeId calculated after re-weighting
      */
-    public float[] negativeTeleport;
+    public double[] negativeTeleport;
 
     /**
      * teleport[nodeId] is the probability of random jump from nodeId
      * to guarantee stationary state of G * p = p
      */
-    public float[] teleport;
+    public double[] teleport;
 
     /**
      * Re-weighted transition probability graph

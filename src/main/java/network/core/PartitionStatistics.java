@@ -16,7 +16,7 @@ public class PartitionStatistics {
     /**
      * Total cell value of group
      */
-    public float[] cellValue;
+    public double[] cellValue;
 
     /**
      * Number of positive cells
@@ -26,7 +26,7 @@ public class PartitionStatistics {
     /**
      * Total positive cell value of partition
      */
-    public float[] positiveCellValue;
+    public double[] positiveCellValue;
 
     /**
      * Number of negative cells
@@ -36,7 +36,7 @@ public class PartitionStatistics {
     /**
      * Total positive cell value of partition
      */
-    public float[] negativeCellValue;
+    public double[] negativeCellValue;
 
     /**
      * Number of groups in the partition

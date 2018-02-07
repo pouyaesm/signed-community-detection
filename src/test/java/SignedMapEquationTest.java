@@ -45,8 +45,8 @@ public class SignedMapEquationTest {
         float[] transitions = { 0.25f,  0.75f,   0.25f,  0.75f,  0.25f,  0.75f};
         SiMapStatistics statistics = new SiMapStatistics();
         statistics.transition = new Graph(new ListMatrix().init(rows, columns, transitions, true).normalize());
-        statistics.negativeTeleport = new float[]{0, 0, 0};
-        statistics.teleport = new float[]{0.3333f, 0.3333f, 0.3333f};
+        statistics.negativeTeleport = new double[]{0, 0, 0};
+        statistics.teleport = new double[]{0.3333, 0.3333, 0.3333};
         int[] partition = {0,   1,  1};
         float tau = 0.1f;
         statistics = Stationary.visitProbabilities(statistics, partition, tau);

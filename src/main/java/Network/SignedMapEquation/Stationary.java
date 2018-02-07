@@ -138,19 +138,21 @@ public class Stationary {
             negativeTeleCoef[groupId]++;
         }
         // Calculate the values
-        for(int groupId = 0 ; groupId < teleCoef.length ; groupId++){
+        for(int groupId = 0 ; groupId < Pg.length ; groupId++){
             teleCoef[groupId] = 1 - teleCoef[groupId]; // 1 - sum(node teleports)
             negativeTeleCoef[groupId] = (nodeCount - negativeTeleCoef[groupId]) / nodeCount;
         }
         // Calculate exiting/entering probability of each group
         for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
             int groupId = partition[nodeId];
+            // For both cases of [un]recorded group distribution,
+            // node recorded must be used as the node stationary distribution
             if(useRecorded){ // consider teleportation steps in code length
                 Pg[groupId] += tau * teleCoef[groupId] * statistics.nodeRecorded[nodeId]
                         + (1 - tau) * statistics.nodeRecorded[nodeId] *
                         (teleCoef[groupId] * statistics.negativeTeleport[nodeId] + outProbability[nodeId]);
             }else{
-                Pg[groupId] += statistics.nodeUnRecorded[nodeId] *
+                Pg[groupId] += statistics.nodeRecorded[nodeId] *
                         (negativeTeleCoef[groupId] * statistics.negativeTeleport[nodeId] + outProbability[nodeId]);
             }
         }

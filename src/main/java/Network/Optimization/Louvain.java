@@ -36,7 +36,7 @@ abstract public class Louvain implements Runnable{
     public int[] detect(Graph graph, int[] initialPartition, int foldCount){
         this.foldCount = foldCount;
         int[] partition = detect(graph, initialPartition);
-        System.out.println(Thread.currentThread().getId() + ": Louvain on " + graph.getNodeCount() + " nodes finished");
+//        System.out.println(Thread.currentThread().getId() + ": Louvain on " + graph.getNodeCount() + " nodes finished");
         return partition;
     }
 
@@ -45,7 +45,7 @@ abstract public class Louvain implements Runnable{
      * @return
      */
     protected int[] detect(Graph graph, int[] initialPartition){
-        /**
+        /*
          * A node n could be an aggregation of multiple nodes folded into on super node
          * pNC: positive weight from node n to group c, where group(n) = c
          * pCN: positive weight from group c to node n, where group(n) = c
@@ -76,7 +76,7 @@ abstract public class Louvain implements Runnable{
         // Recursive detect optimization, partition the network of groups
         int[] superPartition = detect(foldedGraph,
                 Util.ramp(foldedGraph.getNodeCount()), foldCount - 1);
-        /**
+        /*
          * Node with groupId = g in the current level gets groupId = map[g] after coarsening
          * e.g. a node x is in group 10, group 10 is node 0 in folded graph
          * node 0 gets super-group 4, so node x is in group 4
@@ -122,7 +122,7 @@ abstract public class Louvain implements Runnable{
      * @param parameters
      * @return
      */
-    abstract public float evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
+    abstract public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
 
     public int[] getPartition() {
         return partition;

@@ -58,8 +58,8 @@ public class SparseMatrix extends BaseMatrix {
         int[] rowSizes = new int[rowIdRange];
         columnIndices = new int[rowIdRange][];
         this.values = new float[rowIdRange][];
-        for(int p = 0 ; p < rows.length ; p++){
-            rowSizes[rows[p]]++;
+        for(int rowId : rows){
+            rowSizes[rowId]++;
         }
         // create column index, sparse values, and occupied counter per row
         int[] occupied = new int[rowIdRange];

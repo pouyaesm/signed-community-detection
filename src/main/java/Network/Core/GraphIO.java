@@ -1,7 +1,5 @@
 package Network.Core;
 
-import org.junit.platform.commons.util.StringUtils;
-
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -45,9 +43,8 @@ public class GraphIO {
             }else if(Util.isNumber(tkn.nextToken())){
                 throw new Exception("Each line of file must contain 'sourceId targetId' " +
                         "or 'sourceId targetId weight'");
-            }else{
-                // Line is ignored as it may contain comments
             }
+            // Otherwise line is ignored as it may contain comments
         }
         int[] rows = new int[inputRows.size()];
         int[] columns = new int[inputRows.size()];

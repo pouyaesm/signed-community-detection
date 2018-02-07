@@ -2,9 +2,6 @@ package Network.Core;
 
 import cern.colt.map.OpenIntIntHashMap;
 
-import java.util.Iterator;
-import java.util.Map;
-
 public class Util {
     /**
      * Maximum of an integer in all given arrays
@@ -133,9 +130,9 @@ public class Util {
     public static OpenIntIntHashMap normalizeIds(int[]... ids) {
         OpenIntIntHashMap toNormal = new OpenIntIntHashMap(ids[0].length);
         int counter = 0;
-        for (int a = 0; a < ids.length; a++) {
-            for (int i = 0; i < ids[a].length; i++) {
-                int rawId = ids[a][i];
+        for (int[] id : ids) {
+            for (int i = 0; i < id.length; i++) {
+                int rawId = id[i];
                 if (rawId >= 0 && !toNormal.containsKey(rawId)) {
                     toNormal.put(rawId, counter++); // starts from 0
                 }

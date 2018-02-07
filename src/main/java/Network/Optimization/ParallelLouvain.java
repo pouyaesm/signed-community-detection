@@ -33,7 +33,7 @@ abstract public class ParallelLouvain extends Louvain {
         int[][] partitions = new int[graphs.length][];
         // Serial execution
         if(threadCount <= 1){
-            System.out.println("Run serial detection");
+//            System.out.println("Run serial detection");
             Louvain detector = newDetector();
             for(int g = 0 ; g < graphs.length ; g++){
                 partitions[g] = initialPartitions[g];
@@ -61,7 +61,7 @@ abstract public class ParallelLouvain extends Louvain {
             workers[g % threadCount].add(detector);
         }
         // Run workers
-        System.out.println("Run parallel detection");
+//        System.out.println("Run parallel detection");
         for(Thread thread : threads){
             thread.start();
         }

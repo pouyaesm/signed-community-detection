@@ -39,9 +39,9 @@ public class ListMatrixTest {
         Assert.assertArrayEquals(expectedRows, list.getRows());
         Assert.assertArrayEquals(expectedColumns, list.getColumns());
         int forRow = 0, forColumn = 1;
-        Assert.assertEquals(2, (int) list.getToNormal()[forRow].get(1000)); // 1000 -> 2
+        Assert.assertEquals(2, list.getToNormal()[forRow].get(1000)); // 1000 -> 2
         Assert.assertEquals(1000, list.getToRaw()[forRow][2]); // 2 -> 1000
-        Assert.assertEquals(1, (int) list.getToNormal()[forColumn].get(300)); // 300 -> 1
+        Assert.assertEquals(1, list.getToNormal()[forColumn].get(300)); // 300 -> 1
         Assert.assertEquals(300, list.getToRaw()[forColumn][1]); // 1 -> 300
         Assert.assertArrayEquals(expectedValues, list.getValues(), (float) 0.0001);
         // check normalized columns in shared mode

@@ -2,8 +2,6 @@ package Network.Core;
 
 import cern.colt.map.OpenIntIntHashMap;
 
-import java.util.Map;
-
 import static Network.Core.ListMatrix.ROW;
 
 public class Graph extends SparseMatrix {

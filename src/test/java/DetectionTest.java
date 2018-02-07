@@ -49,4 +49,11 @@ public class DetectionTest {
         Assert.assertArrayEquals(expectedPartition, partitions[0]);
         Assert.assertArrayEquals(expectedPartition, partitions[1]);
     }
+
+    @Test
+    public void testCPMEvaulation() throws Exception {
+        Graph graph = GraphIO.readGraph("testCases/squareConflict.txt", true);
+        int[] partition = {0, 0, 1, 1};
+
+    }
 }

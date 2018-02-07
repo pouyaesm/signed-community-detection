@@ -3,10 +3,6 @@ import cern.colt.map.OpenIntIntHashMap;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Comparator;
-
 public class UtilTest {
 
     @Test
@@ -76,11 +72,9 @@ public class UtilTest {
                 50, Statistics.array(permute).uniqueCount);
     }
 
-//    public void testHashMapClone(){
-//        int[] keys = {0, 1, 2, 3, 4, 5};
-//        int[] values = {2, 4, 6, 8, 10, 12};
-//        Map<Integer, Integer> clone = Util.clone(HashIntIntMaps.newUpdatableMap(keys, values));
-//        Assert.assertEquals(6, (int) clone.get(2));
-//        Assert.assertEquals(12, (int) clone.get(5));
-//    }
+    @Test
+    public void testArrayArithmetic(){
+        float[] values = {-1, 0, 2, 10};
+        Assert.assertEquals(11, Util.sum(values), 0f);
+    }
 }

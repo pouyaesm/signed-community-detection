@@ -4,7 +4,6 @@ import Network.Core.*;
 import cern.colt.map.OpenIntIntHashMap;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Network.Optimization procedure originally proposed by M. Rosvall and C. T. Bergstrom
@@ -38,9 +37,11 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
      */
     protected int[][] partition(Graph[] graphs, int refineCount){
         ParallelLouvain detector = newDetector();
+        System.out.println("Louvain algorithm started");
         int[][] partition = detector.detect(graphs, 1000000);
         for(int graphId = 0 ; graphId < graphs.length ; graphId++) {
             for (int r = 0; r < refineCount; r++) {
+                System.out.println("Refinement No. " + (r + 1) + " for graph size " + graphs[graphId].getNodeCount());
                 // Run the recursive submodule movement to improve the optimization
                 int[] refinedPartition = refine(graphs[graphId], partition[graphId]);
                 // Run single node movement upon refined partitions
@@ -82,8 +83,6 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         }
         // Recursive refinement of node groups that have been partitioned
         int[] refinedPartition = new int[initialPartition.length];
-        // Map unique sub global ids to their super group id (in initial partition)
-        int[] subGroupToGroup = new int[initialPartition.length];
         int[] groupCounts = new int[subGraphs.length];
         // This variables are used to convert local groupId of partitions to global unique groupIds
         int globalIdOffset = 0;
@@ -108,7 +107,6 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
                 int nodeId = toNormal.get(subNodeToNode[subNodeId]);
                 int globalId = subPartitions[graphId][subNodeId] + globalIdOffset;
                 refinedPartition[nodeId] = globalId;
-                subGroupToGroup[globalId] = initialPartition[nodeId];
             }
             // Shift globalId more than necessary to avoid collision with the next group
             globalIdOffset += graphNodeCount;

@@ -44,9 +44,9 @@ public class CPM extends RosvallBergstrom {
             graph.setAttributes(nodeSizes);
         }
         int[][] bestPartition = partition(graphs, refineCount);
-//        for(int graphId = 0 ; graphId < graphs.length ; graphId++){
-//            bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
-//        }
+        for(int graphId = 0 ; graphId < graphs.length ; graphId++){
+            bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
+        }
         return bestPartition;
     }
 
@@ -218,13 +218,12 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    public float evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
+    public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
         CPMParameters cpmParameters = (CPMParameters)parameters;
         ListMatrix matrix = graph.getListMatrix();
         PartitionStatistics statistics = Statistics.partition(partition, matrix);
-        int N = graph.getNodeCount();
-        float positiveHamiltonian = 0;
-        float negativeHamiltonian = 0;
+        double positiveHamiltonian = 0;
+        double negativeHamiltonian = 0;
         for(int g = 0; g < statistics.size.length ; g++){
             int nodeCount  = statistics.size[g];
             if(nodeCount > 0){
@@ -233,7 +232,7 @@ public class CPM extends RosvallBergstrom {
                 negativeHamiltonian -= statistics.negativeCellValue[g]; // E-(c) - 0 * N(c)^2
             }
         }
-        float hamiltonian = cpmParameters.alpha * positiveHamiltonian
+        double hamiltonian = cpmParameters.alpha * positiveHamiltonian
                 - (1 - cpmParameters.alpha) * negativeHamiltonian;
         return hamiltonian;
     }

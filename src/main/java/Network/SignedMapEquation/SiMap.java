@@ -41,7 +41,7 @@ public class SiMap {
         statistics = Stationary.visitProbabilities(statistics, partition, cpMapParameters.TAU);
         // Calculate the description length of random step
         // based visiting probabilities of nodes and groups
-        double descriptionLength = 0;
+        double descriptionLength;
         if(cpMapParameters.USE_RECORDED){
             descriptionLength = getDescriptionLength(
                     statistics.nodeRecorded, statistics.groupRecorded, partition);

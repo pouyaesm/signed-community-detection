@@ -2,10 +2,13 @@ import Network.Core.GraphIO;
 import Network.Core.Graph;
 import Network.Core.Statistics;
 import Network.Optimization.CPM;
+import Network.Optimization.CPMParameters;
 import Network.Optimization.CPMapParameters;
 import Network.SignedMapEquation.SiMap;
 import cern.colt.map.OpenIntIntHashMap;
 import org.apache.commons.cli.*;
+
+import java.util.Arrays;
 
 public class Main {
 
@@ -42,11 +45,8 @@ public class Main {
         }else if (args.length == 1) {
             System.out.println(getIntroduction());
         }else{
-            String[] operationArgs = new String[args.length - 1];
             // remove the operation argument to fed to each operation parser
-            for(int i = 0 ; i < args.length - 1 ; i++){
-                operationArgs[i] = args[i + 1];
-            }
+            String[] operationArgs = Arrays.copyOfRange(args, 1, args.length);
             String operation = args[0];
             switch (operation){
                 case DETECT:
@@ -111,20 +111,28 @@ public class Main {
             int iteration = Integer.parseInt(line.getOptionValue(ITERATION, ITERATION_DEFAULT));
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
 
-            CPM detector = (CPM) new CPM().setThreadCount(threadCount);
+            System.out.println("Resolution scale: " + resolution);
+
+            CPM cpmDetector = (CPM) new CPM().setThreadCount(threadCount);
             double time = System.currentTimeMillis();
             Graph graph = GraphIO.readGraph(input, true);
-            System.out.println("Graph has been read");
-            int[] partition = detector.detect(graph, resolution, alpha, iteration);
+            int[] partition = cpmDetector.detect(graph, resolution, alpha, iteration);
             GraphIO.writePartition(graph, partition, output);
             double duration = (System.currentTimeMillis() - time) / 1000;
             System.out.println("Finished in " + duration + " seconds");
             System.out.println("Number of communities: " + Statistics.array(partition).uniqueCount);
+
             CPMapParameters cpMapParameters = new CPMapParameters();
             cpMapParameters.USE_RECORDED = false;
             cpMapParameters.TELEPORT_TO_NODE = false;
             cpMapParameters.TAU = 0.01f;
-            System.out.println("MDL: " + SiMap.evaluate(graph, partition, cpMapParameters));
+            System.out.println("Minimum Description Length: " + SiMap.evaluate(graph, partition, cpMapParameters));
+
+            CPMParameters cpmParameters = new CPMParameters();
+            cpmParameters.resolution = resolution;
+            cpMapParameters.alpha = alpha;
+            System.out.println("Hamiltonian: " + cpmDetector.evaluate(graph, partition, cpMapParameters));
+
         } catch( ParseException exp ) {
             // oops, something went wrong
             System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
@@ -192,6 +200,7 @@ public class Main {
             }
         }
         catch( ParseException exp ) {
+            return;
         }
     }
     /**

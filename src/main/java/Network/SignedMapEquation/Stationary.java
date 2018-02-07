@@ -31,10 +31,9 @@ public class Stationary {
      */
     public static double[] nodeUnRecorded(Graph transitionMatrix, double[] recorded,
                                         float[] negativeTeleport){
-        int nodeCount = transitionMatrix.getNodeCount();
-        double[] unrecorded = new double[nodeCount]; // unRecorded node visit probability
+        double[] unrecorded = new double[recorded.length]; // unRecorded node visit probability
         // Calculate P one step further without considering the teleportation
-        for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
+        for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
             int[] neighbors = transitionMatrix.getColumns(nodeId);
             float[] transitionToNeighbor = transitionMatrix.getValues(nodeId);
             for(int n = 0 ; n < neighbors.length ; n++){
@@ -44,10 +43,11 @@ public class Stationary {
         // Add 1/N of total teleport to each visiting probability
         double totalNegativeTeleport = 0;
         // Total negative teleportation in the air which goes into each node uniformly
-        for(int nodeId = 0; nodeId < nodeCount ; nodeId++){
+        for(int nodeId = 0; nodeId < recorded.length ; nodeId++){
             totalNegativeTeleport += recorded[nodeId] * negativeTeleport[nodeId];
         }
-        for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
+        int nodeCount = transitionMatrix.getNodeCount();
+        for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
             unrecorded[nodeId] += totalNegativeTeleport / nodeCount;
         }
         return unrecorded;
@@ -63,7 +63,7 @@ public class Stationary {
     public static double[] nodeRecorded(Graph transitionMatrix, float[] teleport,
                                         float[] negativeTeleport, double tau, double minDistance){
         int nodeCount = transitionMatrix.getNodeCount();
-        double[] Pt = Util.doubleArray(nodeCount, 1.0f / nodeCount); // distribution at t-th step
+        double[] Pt = Util.doubleArray(nodeCount, 1.0f / transitionMatrix.getNodeCount()); // distribution at t-th step
         double[] Pt_1 = Pt.clone(); // distribution at (t-1)-th step
         double[] multiply = new double[nodeCount]; // holds the multiplication Pt_1 * G
         double distance = 0;
@@ -109,9 +109,9 @@ public class Stationary {
      */
     public static double[] group(SiMapStatistics statistics, int[] partition, double tau, boolean useRecorded){
         int nodeCount = statistics.transition.getNodeCount();
-        int maxGroupId = Util.max(partition);
+        int groupIdRange = Util.max(partition) + 1;
         // probability of exiting or entering groupId
-        double[] Pg = new double[maxGroupId + 1];
+        double[] Pg = new double[groupIdRange];
         // teleport coefficient (groupId) = 1 - sum of teleports of groupId nodes
         double[] teleCoef = new double[Pg.length];
         // negative teleport coefficient (groupId) = (N - N(groupId)) / N

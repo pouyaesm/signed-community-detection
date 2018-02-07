@@ -1,7 +1,6 @@
 package Network.Core;
 
-import com.koloboke.collect.map.IntIntMap;
-import com.koloboke.collect.map.hash.HashIntIntMaps;
+import cern.colt.map.OpenIntIntHashMap;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -40,41 +39,6 @@ public class Util {
     }
 
     /**
-     * Number of unique values in all arrays
-     * @param values
-     * @return
-     */
-    public static int arrayStatistics(int discardedValue, int valueOffset, int size, int[]...values){
-        boolean[] visitedValues = new boolean[size];
-        int uniqueCount = 0;
-        for(int a = 0 ; a < values.length ; a++) {
-            for (int i = 0; i < values[a].length; i++) {
-                int adjustedValue = values[a][i] + valueOffset;
-                if (!visitedValues[adjustedValue] && adjustedValue != discardedValue) {
-                    uniqueCount++;
-                    visitedValues[adjustedValue] = true;
-                }
-            }
-        }
-        return uniqueCount;
-    }
-
-    public static ArrayStatistics arrayStatistics(int[]...values) {
-        ArrayStatistics statistics = new ArrayStatistics();
-        statistics.minValue = Util.min(values);
-        statistics.maxValue = Util.max(values);
-        statistics.uniqueCount = arrayStatistics(Integer.MIN_VALUE,
-                - statistics.minValue, statistics.maxValue - statistics.minValue + 1, values);
-        return statistics;
-    }
-
-    public static ArrayStatistics arrayStatistics(int[] values){
-        int[][] arrays = new int[1][];
-        arrays[0] = values;
-        return arrayStatistics(arrays);
-    }
-
-    /**
      * Return number of zero values
      *
      * @param arrays
@@ -103,7 +67,7 @@ public class Util {
      * @param ids
      * @return
      */
-    public static Map<Integer, Integer> normalizeIds(int[] ids) {
+    public static OpenIntIntHashMap normalizeIds(int[] ids) {
         int[][] idsArray = new int[1][ids.length];
         idsArray[0] = ids;
         return normalizeIds(idsArray);
@@ -134,6 +98,31 @@ public class Util {
     }
 
     /**
+     * Return normalized values, changes [0, 2, 4] to [0, 1, 2]
+     * Changes the imported array
+     * @param values
+     * @return
+     */
+    public static int[] normalizeValues(int[] values) {
+        OpenIntIntHashMap normalIds = new OpenIntIntHashMap(values.length);
+        int minValue = min(values);
+        for(int i = 0 ; i < values.length ; i++){
+            // shift values to [1, ...) to align map's returned 0 value to notFound
+            int value = values[i] - minValue + 1;
+            int normalId = normalIds.get(value);
+            if(normalId > 0){
+                values[i] = normalId - 1;
+            }else{
+                normalId = normalIds.size() + 1;
+                values[i] = normalId - 1;
+                normalIds.put(value, normalId);
+            }
+        }
+        return values;
+    }
+
+
+    /**
      * Normalize ids into 0...L-1 without missing values,
      * assuming all id arrays are representative of the same concept,
      * thus id[a][i] = 3 points to the same concept "3" as id[b][j] = 3 in the b-th array
@@ -141,13 +130,8 @@ public class Util {
      * @param ids
      * @return
      */
-    public static Map<Integer, Integer> normalizeIds(int[]... ids) {
-        int maxRawId = Integer.MIN_VALUE;
-        // maximum raw (un-normalized) id found among all the arrays
-        for (int a = 0; a < ids.length; a++) {
-            maxRawId = Math.max(Util.max(ids[a]), maxRawId);
-        }
-        Map<Integer, Integer> toNormal = HashIntIntMaps.newUpdatableMap(maxRawId + 1);
+    public static OpenIntIntHashMap normalizeIds(int[]... ids) {
+        OpenIntIntHashMap toNormal = new OpenIntIntHashMap(ids[0].length);
         int counter = 0;
         for (int a = 0; a < ids.length; a++) {
             for (int i = 0; i < ids[a].length; i++) {
@@ -382,9 +366,22 @@ public class Util {
      * @param map
      * @return
      */
-    public static Map<Integer, Integer> clone(Map<Integer, Integer> map){
-        Map<Integer, Integer> clone = HashIntIntMaps.newUpdatableMap(map.size());
-        map.forEach(clone::put);
-        return clone;
+//    public static Map<Integer, Integer> clone(Map<Integer, Integer> map){
+//        OpenIntIntHashMap clone = HashIntIntMaps.newUpdatableMap(map.size());
+//        map.forEach(clone::put);
+//        return clone;
+//    }
+
+    /**
+     * Returns an array of 0 to N-1 values
+     * @param size
+     * @return
+     */
+    public static int[] ramp(int size){
+        int[] partition = new int[size];
+        for(int p = 0 ; p < partition.length ; p++){
+            partition[p] = p;
+        }
+        return partition;
     }
 }

@@ -15,7 +15,9 @@ public class GraphIO {
 
     public static Graph readGraph(String address, boolean symmetric) throws Exception{
         ListMatrix listMatrix = readListMatrix(address, symmetric);
-        return new Graph(listMatrix.sort(true, ListMatrix.MODE_REMOVE_DUPLICATE).normalize());
+        // Normalizing without sorting causes [3, 1, 2] to be mapped to [0, 1, 2]
+        // But after sorting: [1, 2, 3] -> [0, 1, 2] easier to track and test
+        return new Graph(listMatrix.sort().normalize());
     }
 
     /**
@@ -56,6 +58,7 @@ public class GraphIO {
             values[p] = inputValues.get(p);
         }
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true);
+        System.out.println(inputRows.size() + " links has been read");
         return symmetric ? listMatrix.symmetrize() : listMatrix;
     }
 
@@ -67,7 +70,7 @@ public class GraphIO {
      */
     public static void writePartition(Graph graph, int[] partition, String address){
         int[] toRaw = graph.getListMatrix().getToRaw()[0]; // convert nodeIds back to un-normalized inputs
-        BufferedWriter writer = null;
+        BufferedWriter writer;
         try {
             writer = new BufferedWriter(new FileWriter(address));
             for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){

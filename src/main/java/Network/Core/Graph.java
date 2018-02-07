@@ -1,5 +1,7 @@
 package Network.Core;
 
+import cern.colt.map.OpenIntIntHashMap;
+
 import java.util.Map;
 
 import static Network.Core.ListMatrix.ROW;
@@ -16,6 +18,7 @@ public class Graph extends SparseMatrix {
 
     /**
      * Decompose graph based on the partition, normalize node ids of each sub-graph
+     * Partitions are assumed to be normalized into 0..K-1
      * @param partition
      * @return
      */
@@ -25,14 +28,14 @@ public class Graph extends SparseMatrix {
         Graph[] subGraphs = new Graph[sparseMatrices.length];
         for(int pr = 0 ; pr < subGraphs.length; pr++){
             subGraphs[pr] = (Graph) sparseMatrices[pr];
-            ListMatrix subMatrix = subGraphs[pr].getListMatrix();
-            if(!hasAttributes()){
-                continue; // no node attributes to copy
+            if(!hasAttributes() || !subGraphs[pr].hasEdge()){
+                continue; // no node attributes to copy or sub-graph is empty
             }
+            ListMatrix subMatrix = subGraphs[pr].getListMatrix();
             // Copy node attributes to new partitions
             int subNodeCount = subMatrix.getRowCount();
             float[][] attributes = new float[subNodeCount][];
-            Map<Integer, Integer> toNormal = getListMatrix().getToNormal()[0];
+            OpenIntIntHashMap toNormal = getListMatrix().getToNormal()[0];
             for(int normalizedId = 0 ; normalizedId < subNodeCount ; normalizedId++){
                 /*
                     raw id of normalized nodeId of sub-graphs
@@ -60,13 +63,13 @@ public class Graph extends SparseMatrix {
             return folded; // no attributes to aggregate
         }
         // Aggregate the attributes of nodes into their superNode
-        ListMatrix listMatrix = folded.getListMatrix();
-        int groupCount = listMatrix.getRowCount();// node count after fold = number of groups
+        ListMatrix foldedList = folded.getListMatrix();
+        int groupIdRange = foldedList.getMaxRowId() + 1;
         int attributeCount = this.attributes[0].length;
-        float[][] attributes = new float[groupCount][attributeCount];
+        float[][] attributes = new float[groupIdRange][attributeCount];
         // Aggregate attribute of nodes into their group node
         // Assumption: superNodes are normalized version of their groupIds in partition
-        Map<Integer, Integer> groupToSuperGroup = listMatrix.getToNormal()[ROW];
+        OpenIntIntHashMap groupToSuperGroup = foldedList.getToNormal()[ROW];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
             int superGroupId = groupToSuperGroup.get(partition[nodeId]);
             for(int attr = 0 ; attr < attributeCount ; attr++){
@@ -102,7 +105,7 @@ public class Graph extends SparseMatrix {
                 }
             }
         }
-        Graph tGraph = (Graph) clone();
+        Graph tGraph = clone();
         tGraph.values = probabilities;
         return tGraph;
     }
@@ -118,11 +121,19 @@ public class Graph extends SparseMatrix {
     }
 
     /**
-     * Number of graph nodes (row count = column count)
+     * Number of graph nodes (row groupCount = column groupCount)
      * @return
      */
     public int getNodeCount(){
         return hasList() ? getListMatrix().getRowCount() : 0;
+    }
+
+    /**
+     * Return maximum node id available
+     * @return
+     */
+    public int getNodeMaxId(){
+        return hasList() ? getListMatrix().getMaxRowId() : -1;
     }
 
     public int getEdgeCount(){

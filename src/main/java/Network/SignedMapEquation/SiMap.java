@@ -16,7 +16,7 @@ public class SiMap {
 
     public static double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
         CPMapParameters cpMapParameters = (CPMapParameters) parameters;
-        SiMapStatistics statistics = reweight(graph, partition);
+        SiMapStatistics statistics = reWeight(graph, partition);
         // Teleport probabilities from each node to guarantee stationary state of G * p = p
         int nodeCount = statistics.transition.getNodeCount();
         statistics.teleport = new float[nodeCount];
@@ -84,31 +84,25 @@ public class SiMap {
      * @param partition
      * @return re-weighted transition probability graph, negative teleport, in/out weight per nodeId
      */
-    public static SiMapStatistics reweight(Graph graph, int[] partition){
+    public static SiMapStatistics reWeight(Graph graph, int[] partition){
         SiMapStatistics statistics = new SiMapStatistics();
         float[][] weights = graph.getValues();
         statistics.transition = graph.getTransitionProbability();
         int nodeCount = statistics.transition.getNodeCount();
+        int groupRangeId = Util.max(partition) + 1;
         /*
             Queue of neighbor groups and their statistics for a specific nodeId
             (groupId, positiveLink, negativeLink, outCoefficient, inCoefficient)
             outCoefficient: positive external re-weight coefficients from nodeId to neighborGroupId
             Node: this queue will be reset after processing each nodeId, for the next nodeId
         */
-        float[][] groupQueue = new float[nodeCount][];
+        float[][] groupQueue = new float[groupRangeId][];
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         /*
             neighborGroupQueueIndex[ng] = q means group ng is a neighbor of current group g
             and it is placed in position q of groupQueue
          */
-        int[] neighborGroupQueueIndex = new int[nodeCount];
-        for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            int groupId = partition[nodeId];
-            if(neighborGroupQueueIndex[groupId] == 0){
-                groupQueue[groupId] = new float[4];
-                neighborGroupQueueIndex[groupId] = -1;
-            }
-        }
+        int[] neighborGroupQueueIndex = Util.intArray(groupRangeId, -1);
         float[] inPositive = new float[nodeCount]; // node's positive weights inside its group
         float[] inNegative = new float[nodeCount]; // node's negative weights inside its group
         float[] totalPositive = new float[nodeCount]; // node's total positive weight
@@ -136,6 +130,7 @@ public class SiMap {
                     // first time this neighbor is visited ?
                     int neighborQueueIndex;
                     if(neighborGroupQueueIndex[neighborGroupId] == -1){
+                        if(groupQueue[queueHead] == null) groupQueue[queueHead] = new float[4];
                         groupQueue[queueHead][0] = neighborGroupId;
                         neighborQueueIndex = neighborGroupQueueIndex[neighborGroupId] = queueHead;
                         queueHead++;
@@ -214,8 +209,8 @@ public class SiMap {
         }
         // remove zero weights from the re-weighted matrix (all negative and some positive weights)
         ListMatrix listMatrix = new ListMatrix()
-                .init(reWeights, statistics.transition.getColumns(), true, true)
-                .sort();
+                .init(reWeights, statistics.transition.getColumns(), true, false)
+                .normalize();
         statistics.transition = new Graph(listMatrix);
         return statistics;
     }

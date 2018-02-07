@@ -41,7 +41,7 @@ public class PartitionStatistics {
     /**
      * Number of groups in the partition
      */
-    public int count;
+    public int groupCount;
     /**
      * Number of discarded pairs which their row or column is assigned to partition -1
      */

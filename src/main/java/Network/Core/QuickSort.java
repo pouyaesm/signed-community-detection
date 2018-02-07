@@ -1,5 +1,7 @@
 package Network.Core;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class QuickSort {
 
     /**
@@ -13,118 +15,127 @@ public class QuickSort {
     private int[] indices;
 
     /**
+     * For keeping track of shifted values based on sorted indices
+     */
+    private boolean[] visited;
+
+    /**
      * Sort descending or ascending
      */
     private boolean descending;
 
-    /**
-     * Start of interval to apply sorting
-     */
-    private int start;
+    private int depth;
 
-    /**
-     * End of interval to apply sorting (inclusive)
-     */
-    private int end;
-
-    public int[] sort(int[] values, boolean descending, boolean clone){
-        return sort(values, 0, values.length - 1, descending, clone);
+    public QuickSort (int[] values){
+        indices = Util.ramp(values.length);
+        visited = new boolean[values.length];
+        this.values = values;
     }
 
-    public int[] sort(int[] values, int start, int end, boolean descending, boolean clone){
-        this.start = start;
-        this.end = end;
+    public QuickSort sort(boolean descending){
+        return sort(0, values.length - 1, descending);
+    }
+
+    public QuickSort sort(int start, int end, boolean descending){
         this.descending = descending;
-        this.indices = new int[values.length];
-        // initialized to not sorted
-        for(int i = 0; i < indices.length ; i++){
-            indices[i] = i;
-        }
-        if(clone){
-            this.values = values.clone();
-        }else{
-            this.values = values;
-        }
-        quickSort(this.start, this.end);
-        return this.values;
+        depth = 0;
+        quickSort(start, end);
+        return this;
     }
 
     private void quickSort(int start, int end){
         if(start >= end) return;
-        if(start < 0) return;
-        if(end > indices.length - 1) return;
-
+        depth++;
+        if(depth > 500){
+            throw new StackOverflowError("WOW!");
+        }
         int pivot = partition(start, end);
         quickSort(start, pivot - 1);
+        depth--;
         quickSort(pivot + 1, end);
+        depth--;
     }
 
     private int partition(int start, int end){
-
         //Get a random pivot between start and end
-        int random = start + (int) (Math.random() * (end - start + 1));
-
-        //New position of pivot element
-        int last = end;
-
+        int pivotIndex =  ThreadLocalRandom.current().nextInt(start, end + 1);
+        int pivotValue = values[indices[pivotIndex]];
         //Move the pivot element to right edge of the array
-        swap(random, end);
-        end--;
-
-        while(start <= end){
-            boolean isDescending = values[start] > values[last];
-            if((descending && !isDescending) || (!descending && isDescending)) {
-                swap(start, end);
-                end--;
+        swap(pivotIndex, end);
+        // For descending, place values larger than pivot to the left of swapIndex (closer to 0)
+        // Then put the pivot in swapIndex
+        pivotIndex = start;
+        for(int k = start ; k < end ; k++){
+            if(descending){
+                if(values[indices[k]] > pivotValue)  swap(pivotIndex++, k);
             }else{
-                start++; // go to next element
+                if(values[indices[k]] < pivotValue)  swap(pivotIndex++, k);
             }
         }
-
         //Move pivot element to its correct position
-        swap(start, last);
-
-        return start;
+        swap(pivotIndex, end);
+        return pivotIndex;
     }
 
-    private void swap(int i, int j){
+    private void swap(int i, int k){
         int iIndex = indices[i];
-        indices[i] = indices[j];
-        indices[j] = iIndex;
-        int iValue = values[i];
-        values[i] = values[j];
-        values[j] = iValue;
+        indices[i] = indices[k];
+        indices[k] = iIndex;
     }
 
     /**
-     * Return new permuted array of values where values[i] <- values[sortedIndices[i]]
-     * @param values
+     * Return the permuted values (no copy)
+     * @param values this will be changed
      * @return
      */
-    public int[] permute(int[] values, boolean clone){
-        int[] permutedValues = new int[end - start + 1];
-        for(int i = 0 ; i < permutedValues.length ; i++){
-            permutedValues[i] = values[indices[start + i]];
+    public int[] permute(int[] values){
+        for(int i = 0 ; i < indices.length ; i++){
+            if(visited[i]) continue;
+            int targetId = i;
+            int startValue = values[targetId];
+            int sourceId = indices[targetId];
+            // while the loop start is not revisited
+            while(!visited[sourceId]) {
+                visited[targetId] = true;
+                values[targetId] = values[sourceId];
+                targetId = sourceId;
+                sourceId = indices[targetId];
+            }
+            values[targetId] = startValue;
         }
-        int[] fullPermutedValues = clone ? values.clone() : values;
-        for(int i = 0 ; i < permutedValues.length ; i++){
-            fullPermutedValues[start + i] = permutedValues[i];
+        // reset visited array (to avoid array creation on each permute)
+        for(int id = 0 ; id < visited.length ; id++){
+            visited[id] = false;
         }
-        return fullPermutedValues;
+        return values;
     }
 
-    public float[] permute(float[] values, boolean clone){
-        float[] permutedValues = new float[end - start + 1];
-        for(int i = 0 ; i < permutedValues.length ; i++){
-            permutedValues[i] = values[indices[start + i]];
+    public float[] permute(float[] values){
+        for(int i = 0 ; i < indices.length ; i++){
+            if(visited[i]) continue;
+            int targetId = i;
+            float startValue = values[targetId];
+            int sourceId = indices[targetId];
+            // while the loop start is not revisited
+            while(!visited[sourceId]) {
+                visited[targetId] = true;
+                values[targetId] = values[sourceId];
+                targetId = sourceId;
+                sourceId = indices[targetId];
+            }
+            values[targetId] = startValue;
         }
-        float[] fullPermutedValues = clone ? values.clone() : values;
-        for(int i = 0 ; i < permutedValues.length ; i++){
-            fullPermutedValues[start + i] = permutedValues[i];
+        // reset visited array (to avoid array creation on each permute)
+        for(int id = 0 ; id < visited.length ; id++){
+            visited[id] = false;
         }
-        return fullPermutedValues;
+        return values;
     }
 
+    public QuickSort setValues(int[] values) {
+        this.values = values;
+        return this;
+    }
 
     public int[] getValues() {
         return values;

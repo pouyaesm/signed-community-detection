@@ -12,7 +12,7 @@ public class DetectionTest {
     public void testCPMDetection() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/3triads.txt", true);
         CPM cpmDetector = new CPM();
-        int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 5);
+        int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 0);
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         Assert.assertArrayEquals(expectedPartition, partition);
     }

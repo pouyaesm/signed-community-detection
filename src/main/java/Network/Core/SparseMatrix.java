@@ -1,7 +1,5 @@
 package Network.Core;
 
-//import gnu.trove.map.hash.TIntIntHashMap;
-
 /**
  * Sparse column matrix
  */
@@ -43,9 +41,9 @@ public class SparseMatrix extends BaseMatrix {
      * @param listMatrix
      */
     public SparseMatrix init(ListMatrix listMatrix){
-        if(!listMatrix.isSorted() || !listMatrix.isUnique() || !listMatrix.isNormalized()){
+        if(!listMatrix.isNormalized()){
             try {
-                throw new Exception("ListMatrix must be sorted, unique, and normalized.");
+                throw new Exception("ListMatrix must be normalized.");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -56,16 +54,16 @@ public class SparseMatrix extends BaseMatrix {
         int[] columns = listMatrix.getColumns();
         float[] values = listMatrix.getValues();
         // build the internal data structure based on normalized ids
-        int rowCount = listMatrix.getRowCount();
-        int[] rowSizes = new int[rowCount];
-        columnIndices = new int[rowCount][];
-        this.values = new float[rowCount][];
+        int rowIdRange = listMatrix.getMaxRowId() + 1;
+        int[] rowSizes = new int[rowIdRange];
+        columnIndices = new int[rowIdRange][];
+        this.values = new float[rowIdRange][];
         for(int p = 0 ; p < rows.length ; p++){
             rowSizes[rows[p]]++;
         }
         // create column index, sparse values, and occupied counter per row
-        int[] occupied = new int[rowCount];
-        for(int r = 0; r < rowSizes.length ; r++){
+        int[] occupied = new int[rowIdRange];
+        for(int r = 0; r < rowIdRange ; r++){
             int rowSize = rowSizes[r];
             columnIndices[r] = new int[rowSize];
             this.values[r] = new float[rowSize];
@@ -113,15 +111,16 @@ public class SparseMatrix extends BaseMatrix {
 
     /**
      * Decompose the sparse matrix into given partitions
+     * Partitions are assumed to be normalized into 0..K-1
      */
     @Override
     public SparseMatrix[] decompose(int[] partition){
         ListMatrix[] decomposedLists = getListMatrix().decompose(partition);
         SparseMatrix[] matrices = new SparseMatrix[decomposedLists.length];
         for(int m = 0 ; m < decomposedLists.length ; m++){
-            matrices[m] = newInstance().init(
-                    decomposedLists[m].normalize(false, true)
-            );
+            matrices[m] = decomposedLists[m] != null ?
+                    newInstance().init(decomposedLists[m].normalize(false, true))
+                    : newInstance(); // empty matrix
         }
         return matrices;
     }

@@ -2,6 +2,7 @@ package Network.Optimization;
 
 import Network.Core.Graph;
 import Network.Core.ListMatrix;
+import Network.Core.Util;
 
 import static Network.Core.ListMatrix.ROW;
 
@@ -29,14 +30,21 @@ abstract public class Louvain implements Runnable{
 
     @Override
     public void run() {
-        this.partition = detect(graph, partition, foldCount);
+        this.partition = detect(graph, partition,foldCount);
+    }
+
+    public int[] detect(Graph graph, int[] initialPartition, int foldCount){
+        this.foldCount = foldCount;
+        int[] partition = detect(graph, initialPartition);
+        System.out.println(Thread.currentThread().getId() + ": Louvain on " + graph.getNodeCount() + " nodes finished");
+        return partition;
     }
 
     /**
      * Perform detect optimization on the graph with the given initial partition
      * @return
      */
-    public int[] detect(Graph graph, int[] initialPartition, int foldCount){
+    protected int[] detect(Graph graph, int[] initialPartition){
         /**
          * A node n could be an aggregation of multiple nodes folded into on super node
          * pNC: positive weight from node n to group c, where group(n) = c
@@ -49,6 +57,7 @@ abstract public class Louvain implements Runnable{
          * n*** : negative weight ...
          */
         int[] partition = initialPartition.clone();
+        if(partition.length == 1) return partition;
         Graph transpose = (Graph) graph.transpose(true);
         float improvement = greedy(graph, transpose, partition);
         if(improvement <= 0.0 || foldCount == 0.0){
@@ -61,20 +70,20 @@ abstract public class Louvain implements Runnable{
         Graph foldedGraph = graph.fold(partition);
         // At least 1% decrease in network size is expected
         double sizeRatio = (double) foldedGraph.getNodeCount() / graph.getNodeCount();
-        if(sizeRatio > 0.99){
+        if(sizeRatio > 0.99 || foldedGraph.getNodeCount() <= 1){
             return partition;
         }
         // Recursive detect optimization, partition the network of groups
         int[] superPartition = detect(foldedGraph,
-                getInitialPartition(foldedGraph.getNodeCount()), foldCount - 1);
+                Util.ramp(foldedGraph.getNodeCount()), foldCount - 1);
         /**
          * Node with groupId = g in the current level gets groupId = map[g] after coarsening
          * e.g. a node x is in group 10, group 10 is node 0 in folded graph
          * node 0 gets super-group 4, so node x is in group 4
          */
-        int[] superGroup = new int[graph.getNodeCount()];
         ListMatrix foldedMatrix = foldedGraph.getListMatrix();
         int[] superNodeToGroup = foldedMatrix.getToRaw()[ROW];
+        int[] superGroup = new int[Util.max(foldedMatrix.getToRaw()[ROW]) + 1];
         for(int superNodeId = 0 ; superNodeId < superPartition.length ; superNodeId++){
             // groupId of foldedGroup before being folded-normalized into a superNode
             int groupId = superNodeToGroup[superNodeId];
@@ -107,17 +116,13 @@ abstract public class Louvain implements Runnable{
     }
 
     /**
-     * Returns an initial partition with each node in a separate group
-     * @param size
+     * Evaluate the quality of partition given the objective parameters
+     * @param graph
+     * @param partition
+     * @param parameters
      * @return
      */
-    public static int[] getInitialPartition(int size){
-        int[] partition = new int[size];
-        for(int p = 0 ; p < partition.length ; p++){
-            partition[p] = p;
-        }
-        return partition;
-    }
+    abstract public float evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
 
     public int[] getPartition() {
         return partition;

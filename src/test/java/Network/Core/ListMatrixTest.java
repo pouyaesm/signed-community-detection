@@ -7,9 +7,9 @@ public class ListMatrixTest {
 
     @Test
     public void testListMatrixSortUniquely(){
-        int[] rows = {      1,  2,      2,      1000,   30, 30, 5,  5};
-        int[] columns = {   10, 300,    100,    5,      20, 20, 6,  3};
-        float[] values = {  1,  2,      3,      4,      5,  5,  3,  2};
+        int[] rows = {      1,  2,      2,      30, 1000,   30, 5,  5};
+        int[] columns = {   10, 300,    100,    20, 5,      20, 6,  3};
+        float[] values = {  1,  2,      3,      5,  4,      5,  3,  2};
         ListMatrix uniqueList = new ListMatrix().init(rows, columns, values, true)
                 .sort(true, ListMatrix.MODE_AGGREGATE_DUPLICATE);
 
@@ -94,12 +94,13 @@ public class ListMatrixTest {
         int[] columns = {   2,  4,  5,  6};
         float[] values = {  1,  3,  4,  4};
         int[] partitions = {-1, 0, 1, -1, 0, 1, -1}; // partition into {1, 4} and {2, 5}, discard {6}
-        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, true).fold(partitions);
+        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, true)
+                .fold(partitions);
         // folded matrix ids are sorted descending by default since the original matrix is not sorted
         Assert.assertArrayEquals(new int[]{0, 0}, foldedMatrix.getRows());
-        Assert.assertArrayEquals(new int[]{1, 0}, foldedMatrix.getColumns());
+        Assert.assertArrayEquals(new int[]{0, 1}, foldedMatrix.getColumns());
         Assert.assertArrayEquals("Intra- or Inter-Group values must be aggregated",
-                new float[]{5, 3}, foldedMatrix.getValues(), 0.0001f);
+                new float[]{3, 5}, foldedMatrix.getValues(), 0.0001f);
     }
 
     @Test

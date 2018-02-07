@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 /**
  * Executes multiple Runnable-s sequentially
- * This is used when number of sub problems are larger than thread count
+ * This is used when number of sub problems are larger than thread groupCount
  * So each thread executes multiple sub problems sequentially
  */
 public class MultiRunnable implements Runnable {

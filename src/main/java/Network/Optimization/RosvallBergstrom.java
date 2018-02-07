@@ -1,6 +1,7 @@
 package Network.Optimization;
 
 import Network.Core.*;
+import cern.colt.map.OpenIntIntHashMap;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -14,7 +15,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
 
     /**
      * Number of links for a sub-graph to be considered large
-     * Graphs with edge count more than this are processed in batch async
+     * Graphs with edge groupCount more than this are processed in batch async
      */
     public final static int LARGE_SUB_GRAPH = 100000;
 
@@ -51,6 +52,8 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
 
     protected int[] refine(Graph graph, int[] initialPartition){
         // Put each partition into a separate graph for isolated louvain community detection
+        // Normalize the partition since decomposition assumes normalized partitions
+        Util.normalizeValues(initialPartition);
         Graph[] subGraphs = graph.decompose(initialPartition);
         ArrayList<Graph> largeGraphs = new ArrayList<>();
         int[][] subPartitions = new int[subGraphs.length][];
@@ -62,7 +65,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             if(nodeCount < 4) { // trivial all in on group
                 subPartitions[graphId] = Util.intArray(nodeCount, 0);
             } else if (edgeCount < LARGE_SUB_GRAPH){ // Initially place each node in a separate group
-                subPartitions[graphId] = Louvain.getInitialPartition(nodeCount);
+                subPartitions[graphId] = Util.ramp(nodeCount);
                 subPartitions[graphId] = newDetector().detect(subGraph, subPartitions[graphId], 1000000);
             } else { // Add to list to be processed in batch along other large graphs (if any)
                 subGraph.setId(graphId); // to be recognized in an array
@@ -71,7 +74,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         }
         // Parallel batch detection of large graphs
         if(largeGraphs.size() > 0){
-            int[][] partitions = newDetector().detect((Graph[]) largeGraphs.toArray(), 1000000);
+            int[][] partitions = newDetector().detect(largeGraphs.toArray(new Graph[0]), 1000000);
             for(int largeId = 0 ; largeId < partitions.length ; largeId++){
                 int graphId = largeGraphs.get(largeId).getId();
                 subPartitions[graphId] = partitions[largeId];
@@ -85,14 +88,14 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         // This variables are used to convert local groupId of partitions to global unique groupIds
         int globalIdOffset = 0;
         for(int graphId = 0 ; graphId < subGraphs.length ; graphId ++){
-            Graph subGraph = subGraphs[graphId];
             // Number of unique sub groups in graphId
-            groupCounts[graphId] = Util.arrayStatistics(subPartitions[graphId]).uniqueCount;
-            if(groupCounts[graphId] == 1) continue; // subGraph is remained un-partitioned
+            groupCounts[graphId] = Statistics.array(subPartitions[graphId]).uniqueCount;
+            if(groupCounts[graphId] <= 1) continue; // subGraph is remained un-partitioned
+            Graph subGraph = subGraphs[graphId];
             // subGraph is further partitioned so refine this subGraph recursively
             subPartitions[graphId] = refine(subGraph, subPartitions[graphId]);
             // Number of groups after recursive refinement (may be unchanged)
-            groupCounts[graphId] = Util.arrayStatistics(subPartitions[graphId]).uniqueCount;
+            groupCounts[graphId] = Statistics.array(subPartitions[graphId]).uniqueCount;
             /*
                 Unique groupId of nodes
                 For example, partition 4: {0, 1, 2, 3} is further partitioned into 0: {0, 1} and 1: {2, 3}
@@ -100,7 +103,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             */
             int graphNodeCount = subGraph.getNodeCount();
             int[] subNodeToNode = subGraph.getListMatrix().getToRaw()[0];
-            Map<Integer, Integer> toNormal = graph.getListMatrix().getToNormal()[0]; // rawNodeId to normalNodeId
+            OpenIntIntHashMap toNormal = graph.getListMatrix().getToNormal()[0]; // rawNodeId to normalNodeId
             for(int subNodeId = 0 ; subNodeId < graphNodeCount ; subNodeId++){
                 int nodeId = toNormal.get(subNodeToNode[subNodeId]);
                 int globalId = subPartitions[graphId][subNodeId] + globalIdOffset;
@@ -143,15 +146,6 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         }
         return refinedPartition;
     }
-
-    /**
-     * Evaluate the quality of partition given the objective parameters
-     * @param graph
-     * @param partition
-     * @param parameters
-     * @return
-     */
-    abstract public float evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
 
     /**
      * Change the group id of disconnected regions inside a group to different ids

@@ -1,5 +1,6 @@
 import Network.Core.Graph;
 import Network.Core.GraphIO;
+import Network.Core.ListMatrix;
 import Network.Optimization.CPMapParameters;
 import Network.SignedMapEquation.SiMapStatistics;
 import Network.SignedMapEquation.SiMap;
@@ -15,9 +16,9 @@ public class SignedMapEquationTest {
     public void testReWeight() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/siMap.txt", false);
         int[] partition = {0, 0, 0, 0, 1, 2, 2}; // {0, 1, 2, 3}, {4}, {5, 6}
-        SiMapStatistics statistics = SiMap.reweight(graph, partition);
+        SiMapStatistics statistics = SiMap.reWeight(graph, partition);
         // Check transitions and neighbors of node "0" ("1" in graph file)
-        int[] expectedNeighbors = {1, 3, 4};
+        int[] expectedNeighbors = {1, 2, 3};
         float[] expectedTransitions = {0.1875f, 0.1875f, 0.25f};
         Assert.assertArrayEquals(expectedNeighbors, statistics.transition.getColumns(0));
         Assert.assertArrayEquals(expectedTransitions, statistics.transition.getValues(0), 0);

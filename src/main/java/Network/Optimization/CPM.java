@@ -37,40 +37,34 @@ public class CPM extends RosvallBergstrom {
                 Set the number of nodes inside each node (which is 1)
                 this size will increase during the folding of nodes into one node
              */
-            float [][] nodeSizes = new float[graph.getNodeCount()][1];
+            float [][] nodeSizes = new float[graph.getNodeMaxId() + 1][1];
             for(int n = 0 ; n < nodeSizes.length ; n++){
                 nodeSizes[n][0] = 1;
             }
             graph.setAttributes(nodeSizes);
         }
-        int[][] bestPartition = partition(graphs,refineCount);
-        for(int graphId = 0 ; graphId < graphs.length ; graphId++){
-            bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
-        }
+        int[][] bestPartition = partition(graphs, refineCount);
+//        for(int graphId = 0 ; graphId < graphs.length ; graphId++){
+//            bestPartition[graphId] = RosvallBergstrom.postProcess(graphs[graphId], bestPartition[graphId]);
+//        }
         return bestPartition;
     }
 
     @Override
     protected float greedy(Graph graph, Graph transpose, int[] partition) {
+        int groupIdRange = Util.max(partition) + 1;
         int N = graph.getNodeCount();
         // Queue of neighbor groups and their statistics (groupId, pCpK, pKCp, nCpK, nKCp)
-        float[][] groupQueue = new float[N][];
+        float[][] groupQueue = new float[groupIdRange][];
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         // groupNeighbor[ng] = q >= 0 means group ng is a neighbor of current group g
         // and it is placed in position q of queue
-        int[] neighborGroupQueueIndex = new int[N];
-        for(int n = 0 ; n < N ; n++){
-            int groupId = partition[n];
-            if(neighborGroupQueueIndex[groupId] == 0) {
-                groupQueue[groupId] = new float[5];
-                neighborGroupQueueIndex[groupId] = -1;
-            }
-        }
+        int[] neighborGroupQueueIndex = Util.intArray(groupIdRange, -1);
         // Number of nodes in each group (each node of a group may be a folded super-node)
-        int[] nodeCount = new int[N];
+        int[] nodeCount = new int[groupIdRange];
         float[][] nodeAttributes = graph.getAttributes();
-        for(int n = 0 ; n < N ; n++){
-            // Node count of each super-node has been saved in the first attribute place by convention
+        for(int n = 0 ; n < partition.length ; n++){
+            // Node groupCount of each super-node has been saved in the first attribute place by convention
             // in detect function
             nodeCount[partition[n]] += (int) nodeAttributes[n][0];
         }
@@ -82,11 +76,12 @@ public class CPM extends RosvallBergstrom {
         float hamChange = 0; // total change of hamiltonian objective
         float movedNodes = N; // number of moved nodes into other groups (0 if groups stay the same)
         // At least 1% node movement is expected to redo the merge pass
+
         while (hamImproved && (movedNodes / N) >= 0.01){
             int[] permute = Util.permute(N); // nodes will be visited in random order
             hamImproved = false;
             movedNodes = 0;
-            for(int k = 0 ; k < N ; k++){
+            for(int k = 0 ; k < partition.length ; k++){
                 int nodeId = permute[k];
                 int groupId = partition[nodeId];
                 // Number of nodes if nodeId is a folded one
@@ -136,6 +131,7 @@ public class CPM extends RosvallBergstrom {
                             // first time this neighbor is visited ?
                             int neighborQueuePosition;
                             if(neighborGroupQueueIndex[neighborGroupId] == -1){
+                                if(groupQueue[queueHead] == null) groupQueue[queueHead] = new float[5];
                                 groupQueue[queueHead][0] = neighborGroupId;
                                 neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId] = queueHead;
                                 queueHead++;
@@ -181,7 +177,7 @@ public class CPM extends RosvallBergstrom {
                     pNegative.KCp = groupQueue[queueIndex][4];
                     pPositive.CpK = groupQueue[queueIndex][1];
                     pNegative.CpK = groupQueue[queueIndex][3];
-                    // add node sub-node count to neighbor group temporarily for local change calculation
+                    // add node sub-node groupCount to neighbor group temporarily for local change calculation
                     pPositive.NCp = pNegative.NCp = nodeCount[neighborGroupId] + nodeSize;
                     float pChange = localChange(pPositive);
                     float nChange = localChange(pNegative);
@@ -225,7 +221,7 @@ public class CPM extends RosvallBergstrom {
     public float evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
         CPMParameters cpmParameters = (CPMParameters)parameters;
         ListMatrix matrix = graph.getListMatrix();
-        PartitionStatistics statistics = MatrixStatistics.partitionStatistics(partition, matrix);
+        PartitionStatistics statistics = Statistics.partition(partition, matrix);
         int N = graph.getNodeCount();
         float positiveHamiltonian = 0;
         float negativeHamiltonian = 0;

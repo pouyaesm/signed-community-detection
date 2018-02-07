@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class ListMatrix extends BaseMatrix{
+public class ListMatrix extends AbstractMatrix {
 
     public static final int MODE_REMOVE_DUPLICATE = 1; // 0001
     public static final int MODE_AGGREGATE_DUPLICATE = 3; // 0011
@@ -185,7 +185,7 @@ public class ListMatrix extends BaseMatrix{
      */
     public ListMatrix sort(boolean isIdAscending, int sortMode){
         // first sort the rows, then sort columns per row
-        QuickSort qSort = new QuickSort(getRows()).sort(!isIdAscending);
+        Utils.QuickSort qSort = new Utils.QuickSort(getRows()).sort(!isIdAscending);
         int[] indices = qSort.getIndices();
         qSort.setValues(columns); // now coninue sorting indices based on column values
         // sort columns per row
@@ -580,7 +580,7 @@ public class ListMatrix extends BaseMatrix{
         int cellCount = 0;
         for(int p = 0 ; p < rows.length ; p++){
             long uniqueId = idRange * rows[p] + columns[p];
-            if(!visitedCell.containsKey(uniqueId)){ // mark both the cell and its mirror
+            if(!visitedCell.containsKey(uniqueId)){ // execute both the cell and its mirror
                 long mirrorUniqueId = idRange * columns[p] + rows[p];
                 visitedCell.put(uniqueId, true);
                 visitedCell.put(mirrorUniqueId, true);
@@ -700,7 +700,7 @@ public class ListMatrix extends BaseMatrix{
     }
 
     @Override
-    public BaseMatrix newInstance() {
+    public AbstractMatrix newInstance() {
         return new ListMatrix();
     }
 

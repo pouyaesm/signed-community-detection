@@ -20,6 +20,22 @@ public class Util {
     }
 
     /**
+     * Id of Maximum value
+     * @param values
+     * @return
+     */
+    public static int maxId(int[] values) {
+        int max = Integer.MIN_VALUE;
+        int maxId = -1;
+        for(int i = 0 ; i < values.length ; i++){
+            if (values[i] > max) {
+                max = values[maxId = i];
+            }
+        }
+        return maxId;
+    }
+
+    /**
      * Minimum of an integer in all given arrays
      * @param arrays
      * @return

@@ -14,7 +14,7 @@ public class UtilTest {
         int[] expectedValues = {100, 4, 3, 5, 1};
         float[] expectedAuxiliaryValues = {100.0f, 4.0f, 2.0f, 1.0f, 3.0f};
 
-        QuickSort quickSort = new QuickSort(values);
+        Utils.QuickSort quickSort = new Utils.QuickSort(values);
         // sort increasing (swap when smaller index is larger), skip the first element to test partial sorting
         quickSort.sort(1, values.length - 1, false);
         int[] sortedValues = quickSort.permute(values.clone()); // apply permutation on a copy of values
@@ -28,7 +28,7 @@ public class UtilTest {
 
         // Repeated values: 1, 1, 3, 3, 4, 5, 5, 6
         int[] repeated = {3, 4, 3, 1, 1, 5, 6, 5};
-        QuickSort moreQuickSort = new QuickSort(repeated);
+        Utils.QuickSort moreQuickSort = new Utils.QuickSort(repeated);
         repeated = moreQuickSort.sort(false).permute(repeated);
         Assert.assertArrayEquals(new int[]{1, 1, 3, 3, 4, 5, 5, 6}, repeated);
     }

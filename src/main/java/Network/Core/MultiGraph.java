@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * A graph consisting of multiple types of graphs
  */
-public class MultiGraph extends BaseMatrix{
+public class MultiGraph extends AbstractMatrix {
     private HashMap<Integer, Graph> graphs;
 
     /**

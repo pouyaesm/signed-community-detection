@@ -145,45 +145,45 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         return refinedPartition;
     }
 
-    /**
-     * Change the group id of disconnected regions inside a group to different ids
-     * @param graph
-     * @param partition
-     */
-    public static int[] postProcess(Graph graph, int[] partition){
-        int[] postPartition = Util.intArray(partition.length, -1);
-        int groupId = 0;
-        for(int nodeId = 0 ; nodeId < postPartition.length ; nodeId++){
-            if(postPartition[nodeId] != -1){
-                continue; // group of n-th node is determined already
-            }
-            markNeighbors(nodeId, groupId, graph, partition, postPartition);
-            // Assign a new group id to the next connected component of same group
-            groupId++;
-        }
-        return postPartition;
-    }
-
-    /**
-     * Recursively set the group id of the given node for its co-group neighbors,
-     * changing the input postPartition
-     * @param nodeId
-     * @param graph
-     * @param partition
-     * @param postPartition this will be changed
-     *
-     */
-    private static void markNeighbors(int nodeId, int groupId, Graph graph, int[] partition, int[] postPartition){
-        postPartition[nodeId] = groupId; // assign the post processed group id
-        int[] neighbors = graph.getColumns(nodeId);
-        float[] linkValues = graph.getValues(nodeId);
-        for(int n = 0 ; n < neighbors.length ; n++){
-            int neighborId = neighbors[n];
-            if(postPartition[neighborId] == -1 && linkValues[n] > 0
-                    && partition[neighborId] == partition[nodeId]){
-                // Go to unprocessed neighbors with positive links and same groups
-                markNeighbors(neighborId, groupId, graph, partition, postPartition);
-            }
-        }
-    }
+//    /**
+//     * Change the group id of disconnected regions inside a group to different ids
+//     * @param graph
+//     * @param partition
+//     */
+//    public static int[] postProcess(Graph graph, int[] partition){
+//        int[] postPartition = Util.intArray(partition.length, -1);
+//        int groupId = 0;
+//        for(int nodeId = 0 ; nodeId < postPartition.length ; nodeId++){
+//            if(postPartition[nodeId] != -1){
+//                continue; // group of n-th node is determined already
+//            }
+//            markNeighbors(nodeId, groupId, graph, partition, postPartition);
+//            // Assign a new group id to the next connected component of same group
+//            groupId++;
+//        }
+//        return postPartition;
+//    }
+//
+//    /**
+//     * Recursively set the group id of the given node for its co-group neighbors,
+//     * changing the input postPartition
+//     * @param nodeId
+//     * @param graph
+//     * @param partition
+//     * @param postPartition this will be changed
+//     *
+//     */
+//    private static void markNeighbors(int nodeId, int groupId, Graph graph, int[] partition, int[] postPartition){
+//        postPartition[nodeId] = groupId; // execute the post processed group id
+//        int[] neighbors = graph.getColumns(nodeId);
+//        float[] linkValues = graph.getValues(nodeId);
+//        for(int n = 0 ; n < neighbors.length ; n++){
+//            int neighborId = neighbors[n];
+//            if(postPartition[neighborId] == -1 && linkValues[n] > 0
+//                    && partition[neighborId] == partition[nodeId]){
+//                // Go to unprocessed neighbors with positive links and same groups
+//                markNeighbors(neighborId, groupId, graph, partition, postPartition);
+//            }
+//        }
+//    }
 }

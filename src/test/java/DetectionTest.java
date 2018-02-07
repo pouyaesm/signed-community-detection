@@ -18,23 +18,6 @@ public class DetectionTest {
     }
 
     /**
-     * This post-process re-assigns disconnected components with the same groupId into separate groups
-     */
-    @Test
-    public void testPartitionPostProcess(){
-        float[][] matrix = {
-            {0, 1,  0,  0},
-            {1, 0,  0,  0},
-            {0, 0,  0,  1},
-            {0, 0,  1,  0}};
-        int[] partition = {0, 0, 0, 0}; // {1, 2}, {3, 4} disconnected components have the same groupId
-        Graph graph = new Graph(new ListMatrix().init(matrix, true));
-        int[] postPartition = RosvallBergstrom.postProcess(graph, partition);
-        // {1, 2}, {3, 4} are supposed to be assigned to different groupIds
-        Assert.assertArrayEquals(new int[]{0, 0, 1, 1}, postPartition);
-    }
-
-    /**
      * Run the parallel detection one the same graph
      * @throws Exception
      */

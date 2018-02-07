@@ -1,4 +1,6 @@
-package Network.Core;
+package Utils;
+
+import Network.Core.Util;
 
 import java.util.concurrent.ThreadLocalRandom;
 

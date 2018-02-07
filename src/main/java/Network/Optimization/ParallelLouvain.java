@@ -1,7 +1,7 @@
 package Network.Optimization;
 
 import Network.Core.Graph;
-import Network.Core.MultiRunnable;
+import Utils.MultiRunnable;
 import Network.Core.Util;
 
 /**

@@ -3,7 +3,7 @@ package Network.Core;
 /**
  * Sparse column matrix
  */
-public class SparseMatrix extends BaseMatrix {
+public class SparseMatrix extends AbstractMatrix {
 
     /**
      * Input List matrix

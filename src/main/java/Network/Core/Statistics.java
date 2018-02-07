@@ -1,5 +1,9 @@
 package Network.Core;
 
+import cern.colt.list.IntArrayList;
+
+import java.util.ArrayList;
+
 /**
  * Common statistics of partitioning a matrix
  */

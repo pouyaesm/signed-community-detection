@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 
 import java.util.Arrays;
 
-public class Center extends AbstractOperation {
+public class OperationCenter extends AbstractOperation {
 
     public static final String VERSION_ID = "1.0.0";
 
@@ -25,6 +25,7 @@ public class Center extends AbstractOperation {
     public static final String VERBOSE = "verbose";
 
     public static final String ERR_INPUT = "input address is not specified";
+    public static final String ERR_DIRECTORY = "output address must be a directory";
 
     @Override
     public void parseOptions(String[] args) {
@@ -89,9 +90,9 @@ public class Center extends AbstractOperation {
      * @return
      */
     public static Options getSharedOptions(){
-        Option input = Option.builder(Center.INPUT).longOpt("input").desc("Input address")
+        Option input = Option.builder(OperationCenter.INPUT).longOpt("input").desc("Input address")
                 .hasArg().argName("address").type(String.class).build();
-        Option output = Option.builder(Center.OUTPUT).longOpt("output")
+        Option output = Option.builder(OperationCenter.OUTPUT).longOpt("output")
                 .desc("Output address")
                 .hasArg().hasArg().argName("address").type(String.class).build();
         Option unDirected = Option.builder()

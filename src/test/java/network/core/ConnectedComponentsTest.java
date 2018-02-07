@@ -13,7 +13,7 @@ public class ConnectedComponentsTest {
         float[] values = {  1, 1, 1, 1, 1};
         Graph graph = new Graph(new ListMatrix().init(rows, columns, values, true)
                 .symmetrize().normalize());
-        ConnectedComponents connectedComponents = new ConnectedComponents(graph).execute();
+        ConnectedComponents connectedComponents = new ConnectedComponents(graph).find();
         int[] components = connectedComponents.getComponents();
         int[] expected = {0, 0, 0, 1, 1, 2};
         Assert.assertArrayEquals(expected, components);
@@ -22,7 +22,7 @@ public class ConnectedComponentsTest {
         // Test connected co groups
         int[] partition = {0, 0, 1, 2, 2, 2}; // 3 goes out of the triad, 2 comes inside the pair
         int[] expectedPartition = {0, 0, 1, 2, 2, 3};
-        int[] newPartition = new ConnectedCoGroups(graph, partition).execute().getComponents();
+        int[] newPartition = new ConnectedCoGroups(graph, partition).find().getComponents();
         Assert.assertArrayEquals(expectedPartition, newPartition);
     }
 }

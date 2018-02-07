@@ -426,12 +426,12 @@ public class ListMatrix extends AbstractMatrix {
         int[][] columns = new int[groupCount][];
         float[][] values = new float[groupCount][];
         int[] occupied = new int[groupCount]; // No. pairs occupying positions per partitions
-        for(int pr = 0 ; pr < groupCount ; pr++){
-            int groupSize = statistics.cellCount[pr];
-            if(groupSize > 0) {
-                rows[pr] = new int[groupSize];
-                columns[pr] = new int[groupSize];
-                values[pr] = new float[groupSize];
+        for(int graphId = 0 ; graphId < groupCount ; graphId++){
+            int graphSize = statistics.cellCount[graphId];
+            if(graphSize > 0) {
+                rows[graphId] = new int[graphSize];
+                columns[graphId] = new int[graphSize];
+                values[graphId] = new float[graphSize];
             }
         }
         // Fill in lists with row column indices
@@ -582,7 +582,7 @@ public class ListMatrix extends AbstractMatrix {
         int cellCount = 0;
         for(int p = 0 ; p < rows.length ; p++){
             long uniqueId = idRange * rows[p] + columns[p];
-            if(!visitedCell.containsKey(uniqueId)){ // execute both the cell and its mirror
+            if(!visitedCell.containsKey(uniqueId)){ // find both the cell and its mirror
                 long mirrorUniqueId = idRange * columns[p] + rows[p];
                 visitedCell.put(uniqueId, true);
                 visitedCell.put(mirrorUniqueId, true);

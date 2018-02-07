@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -76,8 +77,71 @@ public class GraphIO {
                 writer.write(toRaw[nodeId] + "\t" + partition[nodeId] + "\n");
             }
             writer.flush();
+            Shared.log("Partition has been saved to " + getFileName(address));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Write the list matrix as "sourceId targetId weight"
+     */
+    public static void writeListMatrix(ListMatrix listMatrix, String address){
+        writeListMatrix(new ListMatrix[]{listMatrix}, new String[]{address});
+    }
+
+    /**
+     * Write the list matrix as "sourceId targetId weight"
+     */
+    public static void writeListMatrix(ListMatrix[] listMatrices, String[] addresses){
+        BufferedWriter[] writers;
+        try {
+            writers = new BufferedWriter[listMatrices.length];
+            int totalEdgeCount = 0; // this is adapt the level of verbosity to size of matrices
+            for(int m = 0 ; m < listMatrices.length ; m++) {
+                if(listMatrices[m] == null) continue;
+                writers[m] = new BufferedWriter(new FileWriter(addresses[m]));
+                int[] rows = listMatrices[m].getRows();
+                int[] columns = listMatrices[m].getColumns();
+                float[] values = listMatrices[m].getValues();
+                int[] toRaw = listMatrices[m].getToRaw() != null ?
+                        listMatrices[m].getToRaw()[0] : null; // convert nodeIds back to un-normalized inputs
+                for (int p = 0; p < rows.length; p++) {
+                    if (toRaw != null) {
+                        writers[m].write(toRaw[rows[p]] + "\t" + toRaw[columns[p]] + "\t" + values[p] + "\n");
+                    } else {
+                        writers[m].write(rows[p] + "\t" + columns[p] + "\t" + values[p] + "\n");
+                    }
+                }
+                totalEdgeCount += listMatrices[m].getRows().length;
+            }
+            // Flush the writers
+            for(int graphId = 0 ; graphId < writers.length ; graphId++){
+                if(writers[graphId] == null) continue;
+                writers[graphId].flush();
+                // Ensure that the logged lists do not exceed 10
+                double edgeRatio = (double) listMatrices[graphId].getRows().length / totalEdgeCount;
+                if(edgeRatio >= 0.1) {
+                    Shared.log("List " + graphId
+                            + " has been saved to " + getFileName(addresses[graphId]));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Extract the file name from address
+     * @param address
+     * @return
+     */
+    public static String getFileName(String address){
+        int lastSeparator = Math.max(address.lastIndexOf("/"), address.lastIndexOf("\\"));
+        if(lastSeparator < 0){
+            return address;
+        }else{
+            return address.substring(lastSeparator + 1);
         }
     }
 }

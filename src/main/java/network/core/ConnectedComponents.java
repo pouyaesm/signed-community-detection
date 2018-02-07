@@ -11,6 +11,15 @@ public class ConnectedComponents {
      */
     private int[] components;
 
+    /**
+     * Largest connected component, = 1 for nodes inside it
+     */
+    private int[] largestComponent;
+    /**
+     * Id of largest connected component
+     */
+    private int largestComponentId;
+
     public ConnectedComponents(){
     }
 
@@ -20,7 +29,8 @@ public class ConnectedComponents {
 
     public ConnectedComponents init(Graph graph){
         this.graph = graph;
-        this.components = Util.intArray(graph.getNodeCount(), -1);
+        this.components = Util.intArray(graph.getNodeMaxId() + 1, -1);
+        this.largestComponentId = -1;
         return this;
     }
 
@@ -30,16 +40,23 @@ public class ConnectedComponents {
      * but having a link in the graph is the minimal condition
      * @return
      */
-    public ConnectedComponents execute(){
-        int nodeCount = graph.getNodeCount();
+    public ConnectedComponents find(){
+        int nodeIdRange = graph.getNodeMaxId() + 1;
         int componentId = 0;
-        for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
+        for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
             if(components[nodeId] != -1){
                 continue; // node is already visited recursively
             }
             components[nodeId] = componentId;
             markNeighbors(nodeId);
             componentId++; // mark the next connected component
+        }
+        // Find largest connected component too
+        int[] componentSize = Statistics.array(components).frequency;
+        this.largestComponentId = Util.maxId(componentSize);
+        largestComponent = new int[components.length];
+        for(int nodeId = 0 ; nodeId < components.length ; nodeId++){
+            largestComponent[nodeId] = components[nodeId] == largestComponentId ? 1 : 0;
         }
         return this;
     }
@@ -77,24 +94,19 @@ public class ConnectedComponents {
         return true;
     }
 
-    /**
-     * Mark the largest component with 1 and the other nodes with 0
-     * @return
-     */
-    public int[] getLargestComponent(){
-        int largestComponentId = Util.maxId(Statistics.array(components).frequency);
-        int[] largestComponent = new int[components.length];
-        for(int nodeId = 0 ; nodeId < largestComponent.length ; nodeId++){
-            largestComponent[nodeId] = components[nodeId] == largestComponentId ? 1 : 0;
-        }
-        return largestComponent;
-    }
-
     public int[] getComponents() {
         return components;
     }
 
     public Graph getGraph() {
         return graph;
+    }
+
+    public int[] getLargestComponent() {
+        return largestComponent;
+    }
+
+    public int getLargestComponentId() {
+        return largestComponentId;
     }
 }

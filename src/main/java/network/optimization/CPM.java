@@ -46,7 +46,7 @@ public class CPM extends RosvallBergstrom {
         int[][] bestPartition = partition(graphs, refineCount);
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             bestPartition[graphId] = new ConnectedCoGroups(graphs[graphId], bestPartition[graphId])
-                    .execute().getComponents();
+                    .find().getComponents();
         }
         return bestPartition;
     }

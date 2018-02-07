@@ -1,6 +1,6 @@
 package network;
 
-import network.cli.Center;
+import network.cli.OperationCenter;
 
 /**
  * Application start point
@@ -8,6 +8,6 @@ import network.cli.Center;
 public class Main {
     public static void main(String[] args) {
         // Response to passed arguments
-        new Center().parseOptions(args);
+        new OperationCenter().parseOptions(args);
     }
 }

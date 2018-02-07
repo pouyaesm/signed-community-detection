@@ -24,19 +24,20 @@ public class Detection extends AbstractOperation {
         try {
             // isNumber the command line arguments
             CommandLine line = parser.parse( buildOptions(), args );
-            if(line.hasOption(Center.HELP)){
+            if(line.hasOption(OperationCenter.HELP)){
                 showHelp();
                 return;
             }
-            String input = line.getOptionValue(Center.INPUT, "");
+            String input = line.getOptionValue(OperationCenter.INPUT, "");
             if(input.length() == 0){
-                throw new ParseException(Center.ERR_INPUT);
+                throw new ParseException(OperationCenter.ERR_INPUT);
             }
-            String output = line.getOptionValue(Center.OUTPUT, "com_" + input);
-            float resolution = Float.parseFloat(line.getOptionValue(Center.RESOLUTION, Center.RESOLUTION_DEFAULT));
-            float alpha = Float.parseFloat(line.getOptionValue(Center.ALPHA, Center.ALPHA_DEFAULT));
+            String output = line.getOptionValue(OperationCenter.OUTPUT, "com_" + input);
+            float resolution = Float.parseFloat(line.getOptionValue(OperationCenter.RESOLUTION, OperationCenter.RESOLUTION_DEFAULT));
+            float alpha = Float.parseFloat(line.getOptionValue(OperationCenter.ALPHA, OperationCenter.ALPHA_DEFAULT));
             int iteration = Integer.parseInt(line.getOptionValue(ITERATION, ITERATION_DEFAULT));
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
+            Shared.verbose = line.hasOption(OperationCenter.VERBOSE);
 
             Shared.log("Resolution scale: " + resolution);
 
@@ -76,15 +77,15 @@ public class Detection extends AbstractOperation {
     @Override
     public Options buildOptions(){
         // create Options object
-        Option resolution = Option.builder(Center.RESOLUTION)
+        Option resolution = Option.builder(OperationCenter.RESOLUTION)
                 .longOpt("resolution").desc("Resolution for fast community detection at a specific scale;" +
                         " larger values result in smaller and denser communities. Default value is "
-                        + Center.RESOLUTION_DEFAULT)
+                        + OperationCenter.RESOLUTION_DEFAULT)
                 .hasArg().argName("resolution").type(Float.class).build();
-        Option alpha = Option.builder(Center.ALPHA)
+        Option alpha = Option.builder(OperationCenter.ALPHA)
                 .longOpt("alpha")
                 .desc("Relative importance of positive links compared to negative links. Default is "
-                        + Center.ALPHA_DEFAULT)
+                        + OperationCenter.ALPHA_DEFAULT)
                 .hasArg().argName("weight").type(Float.class).build();
         Option iteration = Option.builder()
                 .longOpt(ITERATION)
@@ -96,10 +97,10 @@ public class Detection extends AbstractOperation {
                 .desc("Number of threads used for parallel computations. Default value is "
                         + THREAD_COUNT_DEFAULT)
                 .hasArg().argName("thread").type(Integer.class).build();
-        Option help = Option.builder(Center.HELP)
+        Option help = Option.builder(OperationCenter.HELP)
                 .longOpt("help")
                 .desc("List of options for community detection").build();
-        Options options = Center.getSharedOptions();
+        Options options = OperationCenter.getSharedOptions();
         options.addOption(resolution)
                 .addOption(alpha).addOption(iteration).addOption(threadCount).addOption(help);
         return options;
@@ -110,7 +111,7 @@ public class Detection extends AbstractOperation {
         String header = "Options used for community detection:\n\n";
         String footer = "";
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(Center.DETECT, header, buildOptions(), footer, true);
+        formatter.printHelp(OperationCenter.DETECT, header, buildOptions(), footer, true);
     }
 
     @Override

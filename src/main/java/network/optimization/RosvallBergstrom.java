@@ -177,7 +177,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
 //     *
 //     */
 //    private static void markNeighbors(int nodeId, int groupId, Graph graph, int[] partition, int[] postPartition){
-//        postPartition[nodeId] = groupId; // execute the post processed group id
+//        postPartition[nodeId] = groupId; // find the post processed group id
 //        int[] neighbors = graph.getColumns(nodeId);
 //        float[] linkValues = graph.getValues(nodeId);
 //        for(int n = 0 ; n < neighbors.length ; n++){

@@ -36,7 +36,7 @@
                     <finalName>simap-${project.version}</finalName>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>Main</mainClass>
+                            <mainClass>network.Main</mainClass>
                         </transformer>
                     </transformers>
                 </configuration>

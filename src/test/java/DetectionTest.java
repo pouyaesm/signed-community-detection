@@ -1,8 +1,6 @@
-import Network.Core.Graph;
-import Network.Core.GraphIO;
-import Network.Core.ListMatrix;
-import Network.Optimization.CPM;
-import Network.Optimization.RosvallBergstrom;
+import network.core.Graph;
+import network.core.GraphIO;
+import network.optimization.CPM;
 import org.junit.Assert;
 import org.junit.Test;
 

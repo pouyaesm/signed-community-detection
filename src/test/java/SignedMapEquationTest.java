@@ -1,10 +1,10 @@
-import Network.Core.Graph;
-import Network.Core.GraphIO;
-import Network.Core.ListMatrix;
-import Network.Optimization.CPMapParameters;
-import Network.SignedMapEquation.SiMapStatistics;
-import Network.SignedMapEquation.SiMap;
-import Network.SignedMapEquation.Stationary;
+import network.core.Graph;
+import network.core.GraphIO;
+import network.core.ListMatrix;
+import network.optimization.CPMapParameters;
+import network.signedmapequation.SiMap;
+import network.signedmapequation.SiMapStatistics;
+import network.signedmapequation.Stationary;
 import org.junit.Assert;
 import org.junit.Test;
 

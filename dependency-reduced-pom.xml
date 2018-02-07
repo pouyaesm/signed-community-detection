@@ -30,7 +30,7 @@
           <finalName>simap-${project.version}</finalName>
           <transformers>
             <transformer>
-              <mainClass>Main</mainClass>
+              <mainClass>network.Main</mainClass>
             </transformer>
           </transformers>
         </configuration>

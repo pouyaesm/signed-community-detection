@@ -10,10 +10,12 @@ public class Util {
      */
     public static int max(int[]...arrays) {
         int max = Integer.MIN_VALUE;
-        for(int[] array : arrays)
-        for (int value : array) {
-            if (value > max) {
-                max = value;
+        for(int[] array : arrays) {
+            if (array == null) continue;
+            for (int value : array) {
+                if (value > max) {
+                    max = value;
+                }
             }
         }
         return max;
@@ -27,6 +29,7 @@ public class Util {
     public static int maxId(int[] values) {
         int max = Integer.MIN_VALUE;
         int maxId = -1;
+        if (values == null) return maxId;
         for(int i = 0 ; i < values.length ; i++){
             if (values[i] > max) {
                 max = values[maxId = i];
@@ -42,12 +45,14 @@ public class Util {
      */
     public static int min(int[]...arrays) {
         int min = Integer.MAX_VALUE;
-        for(int[] array : arrays)
+        for(int[] array : arrays) {
+            if (array == null) continue;
             for (int value : array) {
                 if (value < min) {
                     min = value;
                 }
             }
+        }
         return min;
     }
 

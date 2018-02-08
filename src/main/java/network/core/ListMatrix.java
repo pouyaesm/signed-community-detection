@@ -269,6 +269,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix normalize(OpenIntIntHashMap[] mapToNormal, int[][] mapToRaw, boolean clone){
+        if(isEmpty()) return clone ? clone() : this;
         int[] rows = clone ? new int[getRows().length] : getRows();
         int[] columns = clone ? new int[getColumns().length] : getColumns();
         // Create normalization data structure
@@ -282,7 +283,7 @@ public class ListMatrix extends AbstractMatrix {
                 toNormal[COL] = Util.normalizeIds(getColumns());
             }
         }else{
-            toNormal = mapToNormal;
+            toNormal = clone ? mapToNormal.clone() : mapToNormal;
         }
         int minRowId = Integer.MAX_VALUE;
         int maxRowId = Integer.MIN_VALUE;
@@ -320,15 +321,21 @@ public class ListMatrix extends AbstractMatrix {
             toRaw[ROW] = new int[maxRowId + 1];
             toRaw[COL] = new int[maxColumnId + 1];
         }else{
-            toRaw = mapToRaw;
+            toRaw = clone ? mapToRaw.clone() : mapToRaw;
         }
-        // Construct the toRaw id mapper for rows and columns
+        // Construct the toRaw id mapper from all toNormal elements
         for(int dim = 0 ; dim < 2 ; dim++){
             final int[] toRawDim = toRaw[dim];
+            int maxId = dim == ROW ? maxRowId : maxColumnId;
             IntArrayList rawIds = toNormal[dim].keys();
             for(int rawId, i = 0 ; i < rawIds.size() ; i++){
                 rawId = rawIds.get(i);
-                toRawDim[toNormal[dim].get(rawId)] = rawId;
+                // check if the extracted (raw, normal) pair is present in the list
+                // because toNormal may contain maps out of this graph's scope
+                int normalId = toNormal[dim].get(rawId);
+                if(normalId <= maxId) {
+                    toRawDim[normalId] = rawId;
+                }
             }
         }
 
@@ -357,6 +364,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix normalizeKeepRawIds(OpenIntIntHashMap[] mapToNormal, boolean clone){
+        if(isEmpty()) return clone ? clone() : this;
         int[][] oldRawIds = getToRaw();
         ListMatrix normalizedList = normalize(mapToNormal, null, clone);
         if(oldRawIds == null){
@@ -425,6 +433,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix transpose(boolean clone){
+        if(isEmpty()) return clone ? clone() : this;
         int[] tRows = clone ? new int[rows.length] : columns;
         int[] tColumns = clone ? new int[rows.length] : rows;
         ListMatrix transposedList;
@@ -467,6 +476,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix[] decompose(int[] partition){
+        if(isEmpty()) return new ListMatrix[0];
         PartitionStatistics statistics = Statistics.partition(partition, this);
         int[] allRows = getRows();
         int[] allColumns = getColumns();
@@ -478,11 +488,12 @@ public class ListMatrix extends AbstractMatrix {
         float[][] values = new float[groupCount][];
         int[] occupied = new int[groupCount]; // No. pairs occupying positions per partitions
         for(int graphId = 0 ; graphId < groupCount ; graphId++){
-            int graphSize = statistics.cellCount[graphId];
-            if(graphSize > 0) {
-                rows[graphId] = new int[graphSize];
-                columns[graphId] = new int[graphSize];
-                values[graphId] = new float[graphSize];
+            int nodeCount = statistics.size[graphId];
+            if(nodeCount > 0) { // a matrix may have zero occupied cell
+                int cellCount = statistics.cellCount[graphId];
+                rows[graphId] = new int[cellCount];
+                columns[graphId] = new int[cellCount];
+                values[graphId] = new float[cellCount];
             }
         }
         // Fill in lists with row column indices
@@ -506,7 +517,6 @@ public class ListMatrix extends AbstractMatrix {
          */
         ListMatrix[] lists = new ListMatrix[groupCount];
         for(int pr = 0 ; pr < rows.length ; pr++){
-            if(rows[pr] == null) continue; // a sub-graph without link
             lists[pr] = newInstance()
                     .init(rows[pr], columns[pr], values[pr], isIdShared())
                     .setStatus(isSorted(), isUnique(), false, isIdAscending(), getSortMode())
@@ -524,6 +534,7 @@ public class ListMatrix extends AbstractMatrix {
      */
     @Override
     public ListMatrix fold(int[] partition) {
+        if(isEmpty()) return clone();
         int[] allRows = getRows();
         int[] allColumns = getColumns();
         float[] allValues = getValues();
@@ -531,14 +542,10 @@ public class ListMatrix extends AbstractMatrix {
         PartitionStatistics statistics = Statistics.partition(partition, this);
         int groupCount = statistics.groupCount;
         int validPairs = allRows.length - statistics.discardedCellCount;
-//        int[] rows = new int[validPairs];
-//        int[] columns = new int[validPairs];
-//        float[] values = new float[validPairs];
         OpenIntIntHashMap normalGroupId = Util.normalizeIds(partition);
 
         int estimatedPairs = (int) (validPairs * (double) groupCount / partition.length);// edge count * K/N
         HashMap<Long, Float> pairs = new HashMap<Long, Float>(estimatedPairs);
-//        Map<Integer, Float> pairs = HashIntFloatMaps.newUpdatableMap();
         // maps id of row/columns to their raw (unNormalized) row id
         int[][] toRaw = new int[2][];
         toRaw[ROW] = new int[groupCount];
@@ -587,6 +594,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix filter(float lowerBound, float upperBound){
+        if(isEmpty()) return clone();
         int count = 0; // number of valid cells
         for(int p =0 ; p < values.length ; p++){
             if(values[p] > lowerBound && values[p] < upperBound){
@@ -627,7 +635,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix symmetrize(){
-//        Map<Integer, Integer> visitedCell = HashIntIntMaps.newUpdatableMap(2 * rows.length);
+        if(isEmpty()) return clone();
         HashMap<Long, Boolean> visitedCell = new HashMap<Long, Boolean>(2 * rows.length);
         int idRange = Util.max(rows, columns) + 1;
         int cellCount = 0;
@@ -710,7 +718,8 @@ public class ListMatrix extends AbstractMatrix {
     }
 
     @Override
-    public Object clone(){
+    public ListMatrix clone(){
+        if(isEmpty()) return newInstance();
         int[] rows = getRows().clone();
         int[] columns = getColumns().clone();
         float[] values = getValues().clone();

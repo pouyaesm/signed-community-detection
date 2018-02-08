@@ -65,6 +65,7 @@ public class Statistics {
         boolean[] visitedValues = new boolean[valueRange + 1];
         int[] frequency = new int[valueRange + 1];
         for(int[] array : values) {
+            if(array == null) continue;
             for (int i = 0; i < array.length; i++) {
                 int adjustedValue = array[i] - minValue;
                 if (!visitedValues[adjustedValue]) {

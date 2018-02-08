@@ -1,8 +1,8 @@
 package network.core;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import cern.colt.map.OpenIntIntHashMap;
+
+import java.util.*;
 
 /**
  * A graph consisting of multiple types of graphs
@@ -39,17 +39,32 @@ public class MultiGraph extends Graph {
      */
     @Override
     public MultiGraph[] decompose(int[] partition){
-        // Decompose each graph type into sub graphs
+        // Collect the row and column id of all type-graphs to
+        // do a unified node id normalization
+        int[][] ids = new int[2 * graphs.size()][]; // row and column list of each type-graph
         Iterator iterator = graphs.entrySet().iterator();
+        int index = 0;
+        while (iterator.hasNext()){
+            Graph graph = (Graph) ((Map.Entry) iterator.next()).getValue();
+            ids[index++] = graph.getRows();
+            ids[index++] = graph.getColumns();
+        }
+        OpenIntIntHashMap[] mapToNormal = new OpenIntIntHashMap[2];
+        mapToNormal[ROW] = Util.normalizeIds(ids);
+        mapToNormal[COL] = (OpenIntIntHashMap) mapToNormal[ROW].clone();
+        // Decompose each type-graph based on the unified normalization
         HashMap<Integer, Graph[]> subGraphs = new HashMap<>(graphs.size());
+        iterator = graphs.entrySet().iterator();
         int groupCount = 0;
         while (iterator.hasNext()){
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
             Graph graph = (Graph) graphEntry.getValue();
-            Graph[] decomposedGraphs = graph.decompose(partition);
+            //--------------------------------
+            Graph[] decomposedGraphs = graph.decompose(partition, mapToNormal);
+            //--------------------------------
             subGraphs.put(typeId, decomposedGraphs);
-            groupCount = decomposedGraphs.length; // reassigned redundantly!
+            groupCount = decomposedGraphs.length; // re-assigned redundantly!
         }
         // Put all types of each group into one multi-graph
         MultiGraph[] multiGraphs = new MultiGraph[groupCount];
@@ -61,7 +76,7 @@ public class MultiGraph extends Graph {
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
             Graph[] typeSubGraphs = (Graph[]) graphEntry.getValue();
-            // add sub graph of type 'typeId' to multi-graph of corresponding group
+            // add sub graph of type 'typeId' to multi-graph 'groupId'
             for(int groupId = 0 ; groupId < typeSubGraphs.length ; groupId++){
                 multiGraphs[groupId].addGraph(typeId, typeSubGraphs[groupId]);
             }
@@ -103,6 +118,7 @@ public class MultiGraph extends Graph {
 
     public MultiGraph addGraph(int typeId, Graph graph){
         graphs.put(typeId, graph);
+        if(graph == null) return this;
         nodeCount = Math.max(graph.getNodeCount(), nodeCount);
         edgeCount += graph.getEdgeCount();
         hasEdge = hasEdge || graph.hasEdge();

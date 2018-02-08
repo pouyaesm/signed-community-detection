@@ -18,6 +18,7 @@ abstract public class AbstractMatrix {
     public AbstractMatrix fold(int[] partition){
         return null;
     }
+    abstract public boolean isEmpty();
     public void setId(int id) {
         this.id = id;
     }

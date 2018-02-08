@@ -36,12 +36,13 @@ public class SparseMatrix extends ListMatrix {
     @Override
     public void onMatrixBuilt() {
         super.onMatrixBuilt();
+        if(getRows() == null) return;
         // Populate the sparse data structure with list data
         int[] rows = getRows();
         int[] columns = getColumns();
         float[] values = getValues();
         // build the internal data structure based on normalized ids
-        int rowIdRange = getMaxRowId() + 1;
+        int rowIdRange = Math.max(0, getMaxRowId() + 1); // matrix may be empty
         int[] rowSizes = new int[rowIdRange];
         for(int rowId : rows){
             rowSizes[rowId]++;
@@ -96,9 +97,9 @@ public class SparseMatrix extends ListMatrix {
         ListMatrix[] decomposed = super.decompose(partition);
         SparseMatrix[] matrices = new SparseMatrix[decomposed.length];
         for(int m = 0 ; m < decomposed.length ; m++){
-            matrices[m] = newInstance();
             if(decomposed[m] == null) continue;
-            matrices[m].init(decomposed[m].normalizeKeepRawIds(mapToNormal, false));
+            matrices[m] = (SparseMatrix) newInstance()
+                    .init(decomposed[m].normalizeKeepRawIds(mapToNormal, false));
         }
         return matrices;
     }
@@ -153,7 +154,7 @@ public class SparseMatrix extends ListMatrix {
     }
 
     @Override
-    public Object clone(){
+    public SparseMatrix clone(){
         SparseMatrix clone = (SparseMatrix) super.clone();
         clone.sparseValues = new float[sparseValues.length][];
         clone.columnIndices = new int[sparseValues.length][];

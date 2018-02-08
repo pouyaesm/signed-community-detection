@@ -10,15 +10,29 @@ public class Graph extends SparseMatrix {
      */
     float[][] attributes;
 
+    public Graph(){
+
+    }
+
+    public Graph(ListMatrix listMatrix){
+        super(listMatrix);
+    }
+
+    @Override
+    public Graph[] decompose(int[] partition){
+        return decompose(partition, null);
+    }
+
     /**
      * Decompose graph based on the partition, normalize node ids of each sub-graph
      * Partitions are assumed to be normalized into 0..K-1
      * @param partition
+     * @param mapToNormal
      * @return
      */
     @Override
-    public Graph[] decompose(int[] partition){
-        SparseMatrix[] sparseMatrices = super.decompose(partition);
+    public Graph[] decompose(int[] partition, OpenIntIntHashMap[] mapToNormal){
+        SparseMatrix[] sparseMatrices = super.decompose(partition, mapToNormal);
         Graph[] subGraphs = new Graph[sparseMatrices.length];
         // Convert array types
         for(int pr = 0 ; pr < subGraphs.length; pr++) {
@@ -26,8 +40,8 @@ public class Graph extends SparseMatrix {
         }
         // Copy node attributes to new partitions (if any)
         for(int pr = 0 ; pr < subGraphs.length && hasAttributes(); pr++){
-            if(!subGraphs[pr].hasEdge()){
-                continue; // no node attributes to copy or sub-graph is empty
+            if(subGraphs[pr] == null){
+                continue;
             }
             Graph subGraph = subGraphs[pr];
             int subNodeCount = subGraph.getRowCount();
@@ -136,7 +150,7 @@ public class Graph extends SparseMatrix {
     }
 
     public int getEdgeCount(){
-        return getRows().length;
+        return isEmpty() ? 0 : getRows().length;
     }
 
     public Graph setAttributes(float[][] attributes) {

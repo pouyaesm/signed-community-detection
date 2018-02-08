@@ -218,8 +218,7 @@ public class CPM extends RosvallBergstrom {
     @Override
     public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
         CPMParameters cpmParameters = (CPMParameters)parameters;
-        ListMatrix matrix = graph.getListMatrix();
-        PartitionStatistics statistics = Statistics.partition(partition, matrix);
+        PartitionStatistics statistics = Statistics.partition(partition, graph);
         double positiveHamiltonian = 0;
         double negativeHamiltonian = 0;
         for(int g = 0; g < statistics.size.length ; g++){

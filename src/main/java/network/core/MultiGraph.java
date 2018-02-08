@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * A graph consisting of multiple types of graphs
  */
-public class MultiGraph extends AbstractMatrix {
+public class MultiGraph extends Graph {
     private HashMap<Integer, Graph> graphs;
 
     /**
@@ -16,11 +16,18 @@ public class MultiGraph extends AbstractMatrix {
     private int nodeCount;
 
     /**
+     * Sum of sub-graph edge counts
+     */
+
+    private int edgeCount;
+
+    /**
      * If at least one graph has an edge
      */
     private boolean hasEdge;
 
     public MultiGraph(){
+        super();
         graphs =  new HashMap<>();
         nodeCount = 0;
         hasEdge = false;
@@ -97,6 +104,7 @@ public class MultiGraph extends AbstractMatrix {
     public MultiGraph addGraph(int typeId, Graph graph){
         graphs.put(typeId, graph);
         nodeCount = Math.max(graph.getNodeCount(), nodeCount);
+        edgeCount += graph.getEdgeCount();
         hasEdge = hasEdge || graph.hasEdge();
         return this;
     }
@@ -109,12 +117,19 @@ public class MultiGraph extends AbstractMatrix {
      * Return true if at least one sub-graph has edge
      * @return
      */
+    @Override
     public boolean hasEdge(){
         return hasEdge;
     }
 
+    @Override
     public int getNodeCount() {
         return nodeCount;
+    }
+
+    @Override
+    public int getEdgeCount() {
+        return edgeCount;
     }
 
     @Override

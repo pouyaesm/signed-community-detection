@@ -18,7 +18,7 @@ public class GraphIO {
         ListMatrix listMatrix = readListMatrix(address, symmetric);
         // Normalizing without sorting causes [3, 1, 2] to be mapped to [0, 1, 2]
         // But after sorting: [1, 2, 3] -> [0, 1, 2] easier to track and test
-        return new Graph(listMatrix.sort().normalize());
+        return (Graph) new Graph().init(listMatrix.sort().normalize());
     }
 
     /**
@@ -69,7 +69,7 @@ public class GraphIO {
      * @param address
      */
     public static void writePartition(Graph graph, int[] partition, String address){
-        int[] toRaw = graph.getListMatrix().getToRaw()[0]; // convert nodeIds back to un-normalized inputs
+        int[] toRaw = graph.getToRaw()[0]; // convert nodeIds back to un-normalized inputs
         BufferedWriter writer;
         try {
             writer = new BufferedWriter(new FileWriter(address));

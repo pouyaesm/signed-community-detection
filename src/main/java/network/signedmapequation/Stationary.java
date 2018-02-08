@@ -74,7 +74,7 @@ public class Stationary {
                 totalNegativeTeleport += Pt[nodeId] * negativeTeleport[nodeId];
             }
             // Calculate P = P(t - 1) * G
-            float[][] transitions = transitionMatrix.getValues();
+            float[][] transitions = transitionMatrix.getSparseValues();
             for(int nodeId = 0 ; nodeId < nodeCount; nodeId++){
                 int[] neighbors = transitionMatrix.getColumns(nodeId);
                 float[] transitionToNeighbor = transitions[nodeId];

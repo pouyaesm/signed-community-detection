@@ -79,14 +79,14 @@ public class SiMap {
         return descriptionLength;
     }
     /**
-     * Re-weight the graph links based on the extended map equation
+     * Re-weight the graph links based on the extended maps equation
      * @param graph
      * @param partition
      * @return re-weighted transition probability graph, negative teleport, in/out weight per nodeId
      */
     public static SiMapStatistics reWeight(Graph graph, int[] partition){
         SiMapStatistics statistics = new SiMapStatistics();
-        float[][] weights = graph.getValues();
+        float[][] weights = graph.getSparseValues();
         statistics.transition = graph.getTransitionProbability();
         int nodeCount = statistics.transition.getNodeCount();
         int groupRangeId = Util.max(partition) + 1;
@@ -113,7 +113,7 @@ public class SiMap {
         // inCoefficient: positive internal re-weight coefficients
         double[] inCoefficient = new double[nodeCount];
         // Use the transition weights for re-weighting and generation of re-weighted graph
-        float[][] reWeights = statistics.transition.getValues();
+        float[][] reWeights = statistics.transition.getSparseValues();
         for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
             int groupId = partition[nodeId];
             int[] neighbors = statistics.transition.getColumns(nodeId);
@@ -208,10 +208,10 @@ public class SiMap {
             statistics.inWeight[nodeId] += negativeTeleport / nodeCount;
         }
         // remove zero weights from the re-weighted matrix (all negative and some positive weights)
-        ListMatrix listMatrix = new ListMatrix()
-                .init(reWeights, statistics.transition.getColumns(), true, false)
+        ListMatrix transitionList = new ListMatrix()
+                .init(reWeights, statistics.transition.getSparseColumns(), true, false)
                 .normalize();
-        statistics.transition = new Graph(listMatrix);
+        statistics.transition = (Graph) new Graph().init(transitionList);
         return statistics;
     }
 

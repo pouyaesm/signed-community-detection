@@ -76,13 +76,12 @@ abstract public class Louvain implements Runnable{
         int[] superPartition = detect(foldedGraph,
                 Util.ramp(foldedGraph.getNodeCount()), foldCount - 1);
         /*
-         * Node with groupId = g in the current level gets groupId = map[g] after coarsening
+         * Node with groupId = g in the current level gets groupId = maps[g] after coarsening
          * e.g. a node x is in group 10, group 10 is node 0 in folded graph
          * node 0 gets super-group 4, so node x is in group 4
          */
-        ListMatrix foldedMatrix = foldedGraph.getListMatrix();
-        int[] superNodeToGroup = foldedMatrix.getToRaw()[ROW];
-        int[] superGroup = new int[Util.max(foldedMatrix.getToRaw()[ROW]) + 1];
+        int[] superNodeToGroup = foldedGraph.getToRaw()[ROW];
+        int[] superGroup = new int[Util.max(foldedGraph.getToRaw()[ROW]) + 1];
         for(int superNodeId = 0 ; superNodeId < superPartition.length ; superNodeId++){
             // groupId of foldedGroup before being folded-normalized into a superNode
             int groupId = superNodeToGroup[superNodeId];

@@ -104,8 +104,8 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
                 thus id 6 is assigned to sub group 4-0, and id 7 to sub group 4-1
             */
             int graphNodeCount = subGraph.getNodeCount();
-            int[] subNodeToNode = subGraph.getListMatrix().getToRaw()[0];
-            OpenIntIntHashMap toNormal = graph.getListMatrix().getToNormal()[0]; // rawNodeId to normalNodeId
+            int[] subNodeToNode = subGraph.getToRaw()[0];
+            OpenIntIntHashMap toNormal = graph.getToNormal()[0]; // rawNodeId to normalNodeId
             for(int subNodeId = 0 ; subNodeId < graphNodeCount ; subNodeId++){
                 int nodeId = toNormal.get(subNodeToNode[subNodeId]);
                 int globalId = subPartitions[graphId][subNodeId] + globalIdOffset;
@@ -120,7 +120,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             return refinedPartition;
         }
         // Fold the refined groups and optimize the folded network starting with initialPartition
-        // Create a map from refinedPartition to initial partition so as to
+        // Create a maps from refinedPartition to initial partition so as to
         // connect folded super nodes -> refinedPartition -> initialPartition
         int[] refinedToInitial = new int[graph.getNodeCount()];
         for(int nodeId = 0 ; nodeId < refinedPartition.length ; nodeId++){
@@ -129,7 +129,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             refinedToInitial[refinedGroupId] = initialPartition[nodeId];
         }
         Graph folded = graph.fold(refinedPartition);
-        int[] superNodeToRefined = folded.getListMatrix().getToRaw()[0];
+        int[] superNodeToRefined = folded.getToRaw()[0];
         int[] foldedInitialPartition = new int[folded.getNodeCount()];
         for(int superNodeId = 0 ; superNodeId < foldedInitialPartition.length ; superNodeId++){
             foldedInitialPartition[superNodeId] = refinedToInitial[superNodeToRefined[superNodeId]];

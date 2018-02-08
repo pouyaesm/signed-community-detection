@@ -1,5 +1,6 @@
 package network.core;
 
+import cern.colt.map.OpenIntIntHashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,6 +50,31 @@ public class ListMatrixTest {
         // check rows and columns when unNormalized back to initial ids
         Assert.assertArrayEquals(rows, unNormalized.getRows());
         Assert.assertArrayEquals(columns, unNormalized.getColumns());
+    }
+
+    @Test
+    public void testListMatrixAdvancedNormalize(){
+        int[] rows = {      1, 2};
+        int[] columns = {   3, 1};
+        float[] values = {  1, 2};
+        // First normalize ordinary
+        ListMatrix normalized = new ListMatrix().init(rows, columns, values, true)
+                .normalize();
+        // Then normalize to custom ids while keeping the old raw maps
+        // meaning the final toRaw must be: 4 -> 0 -> 1, 5 -> 1 -> 2, 6 -> 2 -> 3
+        OpenIntIntHashMap[] toNormal = new OpenIntIntHashMap[2];
+        toNormal[0] = new OpenIntIntHashMap();
+        toNormal[1] = new OpenIntIntHashMap();
+        toNormal[0].put(0, 4);
+        toNormal[1].put(0, 4);
+        toNormal[0].put(1, 5);
+        toNormal[1].put(1, 5);
+        toNormal[0].put(2, 6);
+        toNormal[1].put(2, 6);
+        ListMatrix customNormalized = normalized.normalizeKeepRawIds(toNormal, true);
+
+        int[] expectedToRaw = {0, 0, 0, 0, 1, 2, 3};
+        Assert.assertArrayEquals(expectedToRaw, customNormalized.getToRaw()[0]);
     }
 
     /**

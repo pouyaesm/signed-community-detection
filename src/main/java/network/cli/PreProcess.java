@@ -75,7 +75,7 @@ public class PreProcess extends AbstractOperation{
                     String[] addresses = new String[graphs.length];
                     for(int graphId = 0 ; graphId < graphs.length ; graphId++){
                         if(graphs[graphId] == null) continue;
-                        listMatrices[graphId] = graphs[graphId].getListMatrix();
+                        listMatrices[graphId] = graphs[graphId];
                         addresses[graphId] = output + outputPrefix
                                 + "component-" + graphId + ".txt";
                     }
@@ -90,7 +90,7 @@ public class PreProcess extends AbstractOperation{
                             output + outputPrefix + "lcc.txt");
                 }
                 if(outputGraph){
-                    GraphIO.writeListMatrix(graph.getListMatrix(),
+                    GraphIO.writeListMatrix(graph,
                             output + outputPrefix + "largest-component.txt");
                 }
             }

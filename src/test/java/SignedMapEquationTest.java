@@ -34,8 +34,8 @@ public class SignedMapEquationTest {
         Assert.assertArrayEquals(new float[]{0.25f, 0.25f, 0.25f, 0.25f}
         , toyStatistics.transition.getValues(2), 0f);
         Assert.assertEquals(0f, toyStatistics.negativeTeleport[2], 0f);
-        Assert.assertEquals(4f, toyStatistics.inWeight[2], 0f);
-        Assert.assertEquals(4f, toyStatistics.outWeight[2], 0f);
+        Assert.assertEquals(4f, toyStatistics.inWeight[2], 0.0001f);
+        Assert.assertEquals(4f, toyStatistics.outWeight[2], 0.0001f);
     }
 
     @Test
@@ -44,7 +44,8 @@ public class SignedMapEquationTest {
         int[] columns = {       2,      3,      1,      3,      1,      2};
         float[] transitions = { 0.25f,  0.75f,   0.25f,  0.75f,  0.25f,  0.75f};
         SiMapStatistics statistics = new SiMapStatistics();
-        statistics.transition = new Graph(new ListMatrix().init(rows, columns, transitions, true).normalize());
+        statistics.transition = (Graph) new Graph().init(
+                new ListMatrix().init(rows, columns, transitions, true).normalize());
         statistics.negativeTeleport = new double[]{0, 0, 0};
         statistics.teleport = new double[]{0.3333, 0.3333, 0.3333};
         int[] partition = {0,   1,  1};

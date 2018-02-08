@@ -120,7 +120,7 @@ public class Util {
         OpenIntIntHashMap normalIds = new OpenIntIntHashMap(values.length);
         int minValue = min(values);
         for(int i = 0 ; i < values.length ; i++){
-            // shift values to [1, ...) to align map's returned 0 value to notFound
+            // shift values to [1, ...) to align maps's returned 0 value to notFound
             int value = values[i] - minValue + 1;
             int normalId = normalIds.get(value);
             if(normalId > 0){
@@ -375,13 +375,13 @@ public class Util {
     }
 
     /**
-     * Clone the map object
-     * @param map
+     * Clone the maps object
+     * @param maps
      * @return
      */
-//    public static Map<Integer, Integer> clone(Map<Integer, Integer> map){
-//        OpenIntIntHashMap clone = HashIntIntMaps.newUpdatableMap(map.size());
-//        map.forEach(clone::put);
+//    public static Map<Integer, Integer> clone(Map<Integer, Integer> maps){
+//        OpenIntIntHashMap clone = HashIntIntMaps.newUpdatableMap(maps.size());
+//        maps.forEach(clone::put);
 //        return clone;
 //    }
 

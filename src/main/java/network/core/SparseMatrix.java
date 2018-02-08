@@ -1,19 +1,16 @@
 package network.core;
 
+import cern.colt.map.OpenIntIntHashMap;
+
 /**
  * Sparse column matrix
  */
-public class SparseMatrix extends AbstractMatrix {
-
-    /**
-     * Input List matrix
-     */
-    private ListMatrix listMatrix;
+public class SparseMatrix extends ListMatrix {
 
     /**
      * Matrix values per non-null cell
      */
-    float[][] values;
+    float[][] sparseValues;
 
 
     /**
@@ -25,88 +22,57 @@ public class SparseMatrix extends AbstractMatrix {
 
     }
 
-    /**
-     *
-     * @param listMatrix
-     */
     public SparseMatrix(ListMatrix listMatrix){
-        if(listMatrix != null) {
-            init(listMatrix);
-        }
+        super(listMatrix);
     }
 
+
+
     /**
-     * Constructs a sparse matrix, where sparsity is imposed on columns
-     * Assumption: there must be no duplicate (row, column) in the input
-     * @param listMatrix
+     * Build the sparse data structure based on the list of (row, column, value)
+     * Assumption: there must be no duplicate (row, column) in the inputs
+     * @return
      */
-    public SparseMatrix init(ListMatrix listMatrix){
-        if(!listMatrix.isNormalized()){
-            try {
-                throw new Exception("ListMatrix must be normalized.");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-        this.listMatrix = listMatrix;
-        int[] rows = listMatrix.getRows();
-        int[] columns = listMatrix.getColumns();
-        float[] values = listMatrix.getValues();
+    @Override
+    public void onMatrixBuilt() {
+        super.onMatrixBuilt();
+        // Populate the sparse data structure with list data
+        int[] rows = getRows();
+        int[] columns = getColumns();
+        float[] values = getValues();
         // build the internal data structure based on normalized ids
-        int rowIdRange = listMatrix.getMaxRowId() + 1;
+        int rowIdRange = getMaxRowId() + 1;
         int[] rowSizes = new int[rowIdRange];
-        columnIndices = new int[rowIdRange][];
-        this.values = new float[rowIdRange][];
         for(int rowId : rows){
             rowSizes[rowId]++;
         }
         // create column index, sparse values, and occupied counter per row
+        this.columnIndices = new int[rowIdRange][];
+        this.sparseValues = new float[rowIdRange][];
         int[] occupied = new int[rowIdRange];
         for(int r = 0; r < rowIdRange ; r++){
             int rowSize = rowSizes[r];
-            columnIndices[r] = new int[rowSize];
-            this.values[r] = new float[rowSize];
+            this.columnIndices[r] = new int[rowSize];
+            this.sparseValues[r] = new float[rowSize];
             occupied[r] = 0;
         }
         for(int p = 0 ; p < rows.length ; p++){
             int rowId = rows[p];
             this.columnIndices[rowId][occupied[rowId]] = columns[p];
-            this.values[rowId][occupied[rowId]++] = values[p];
+            this.sparseValues[rowId][occupied[rowId]++] = values[p];
         }
-        return this;
     }
 
-
     public float getValue(int row, int column){
-        int rowId = listMatrix.getToNormal()[0].get(row);
-        int columnId = listMatrix.getToNormal()[1].get(column);
+        int rowId = getToNormal()[0].get(row);
+        int columnId = getToNormal()[1].get(column);
         int[] columns = columnIndices[rowId];
         for(int c = 0 ; c < columns.length ; c++){
             if(columns[c] == columnId){
-                return values[rowId][c];
+                return sparseValues[rowId][c];
             }
         }
         return Integer.MIN_VALUE; // not found
-    }
-
-    /**
-     * Transpose the sparse matrix
-     * @return
-     */
-    @Override
-    public SparseMatrix transpose(boolean clone){
-        ListMatrix transposedList = getListMatrix().transpose(clone);
-        return clone ? newInstance().init(transposedList) : init(transposedList);
-    }
-
-    /**
-     * Fold the sparse matrix for the given partition
-     */
-    @Override
-    public SparseMatrix fold(int[] partition){
-        ListMatrix foldedList = getListMatrix().fold(partition);
-        return newInstance().init(foldedList);
     }
 
     /**
@@ -115,36 +81,38 @@ public class SparseMatrix extends AbstractMatrix {
      */
     @Override
     public SparseMatrix[] decompose(int[] partition){
-        ListMatrix[] decomposedLists = getListMatrix().decompose(partition);
-        SparseMatrix[] matrices = new SparseMatrix[decomposedLists.length];
-        for(int m = 0 ; m < decomposedLists.length ; m++){
-            matrices[m] = decomposedLists[m] != null ?
-                    newInstance().init(decomposedLists[m].normalize(false, true))
-                    : newInstance(); // empty matrix
+        return decompose(partition, null);
+    }
+
+    /**
+     * Decompose the sparse matrix into given partitions
+     * using the provided normalization map
+     * @param mapToNormal node ids are changed according to this map
+     * @param partition
+     * @return
+     */
+    @Override
+    public SparseMatrix[] decompose(int[] partition, OpenIntIntHashMap[] mapToNormal){
+        ListMatrix[] decomposed = super.decompose(partition);
+        SparseMatrix[] matrices = new SparseMatrix[decomposed.length];
+        for(int m = 0 ; m < decomposed.length ; m++){
+            matrices[m] = newInstance();
+            if(decomposed[m] == null) continue;
+            matrices[m].init(decomposed[m].normalizeKeepRawIds(mapToNormal, false));
         }
         return matrices;
     }
 
     /**
-     * Return sparse matrix of only filtered values
-     * @param lowerBound
-     * @param upperBound
-     * @see ListMatrix#filter(float, float)
-     * @return
-     */
-    public SparseMatrix filter(float lowerBound, float upperBound){
-        return newInstance().init(getListMatrix().filter(lowerBound, upperBound));
-    }
-    /**
      * Get full matrix
      * @return
      */
     public float[][] getFull(){
-        float[][] matrix = new float[getListMatrix().getRowCount()][getListMatrix().getColumnCount()];
-        for(int r = 0 ; r < values.length ; r++){
+        float[][] matrix = new float[getRowCount()][getColumnCount()];
+        for(int r = 0 ; r < sparseValues.length ; r++){
             int[] columns = columnIndices[r]; // columns of r-th row
-            for(int c = 0 ; c < values[r].length ; c++){
-                matrix[r][columns[c]] = values[r][c];
+            for(int c = 0 ; c < sparseValues[r].length ; c++){
+                matrix[r][columns[c]] = sparseValues[r][c];
             }
         }
         return matrix;
@@ -156,15 +124,15 @@ public class SparseMatrix extends AbstractMatrix {
      * @return
      */
     public float[] getValues(int rowId){
-        return values[rowId];
+        return sparseValues[rowId];
     }
 
     /**
      * Get sparse cell values
      * @return
      */
-    public float[][] getValues(){
-        return values;
+    public float[][] getSparseValues(){
+        return sparseValues;
     }
 
     /**
@@ -180,30 +148,17 @@ public class SparseMatrix extends AbstractMatrix {
      * Get column indices
      * @return
      */
-    public int[][] getColumns(){
+    public int[][] getSparseColumns(){
         return columnIndices;
-    }
-
-    public ListMatrix getListMatrix() {
-        return listMatrix;
-    }
-
-    /**
-     * Whether matrix has a non-empty list of cells
-     * @return
-     */
-    public boolean hasList(){
-        return getListMatrix() != null && getListMatrix().getRowCount() > 0;
     }
 
     @Override
     public Object clone(){
-        SparseMatrix clone = newInstance();
-        clone.listMatrix = (ListMatrix) getListMatrix().clone();
-        clone.values = new float[values.length][];
-        clone.columnIndices = new int[values.length][];
-        for(int r = 0 ; r < values.length ; r++){
-            clone.values[r] = values[r].clone();
+        SparseMatrix clone = (SparseMatrix) super.clone();
+        clone.sparseValues = new float[sparseValues.length][];
+        clone.columnIndices = new int[sparseValues.length][];
+        for(int r = 0 ; r < sparseValues.length ; r++){
+            clone.sparseValues[r] = sparseValues[r].clone();
             clone.columnIndices[r] = columnIndices[r].clone();
         }
         return clone;

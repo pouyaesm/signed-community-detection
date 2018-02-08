@@ -9,6 +9,6 @@ public class GraphTest {
         Graph graph = GraphIO.readGraph("testCases/triad.txt", true);
         Graph transition = graph.getTransitionProbability();
         float[][] expectedWeights = {{0.25f, 0.75f}, {0.5f, 0.5f}, {0.75f, 0.25f}};
-        MyAssert.assertArrayEquals(expectedWeights, transition.getValues());
+        MyAssert.assertArrayEquals(expectedWeights, transition.getSparseValues());
     }
 }

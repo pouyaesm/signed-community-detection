@@ -1,7 +1,7 @@
 package network.core;
 
-import network.utils.QuickSort;
 import cern.colt.list.IntArrayList;
+import network.utils.QuickSort;
 import cern.colt.map.OpenIntIntHashMap;
 
 import java.util.HashMap;
@@ -22,7 +22,7 @@ public class ListMatrix extends AbstractMatrix {
     private float[] values;
     /**
      * Maps raw id to normalized id
-     * toNormal[0] is for rows and toNormal[1] is for columns
+     * maps[0] is for rows and maps[1] is for columns
      */
     protected OpenIntIntHashMap[] toNormal;
     /**
@@ -30,15 +30,6 @@ public class ListMatrix extends AbstractMatrix {
      * toRaw[0] is for rows and toRow[1] is for columns
      */
     protected int[][] toRaw;
-
-    /**
-     * Number of unique row ids
-     */
-    protected int rowCount;
-    /**
-     * Number of unique column ids
-     */
-    protected int columnCount;
 
     /**
      * true if row and column are representative of the same entity
@@ -77,27 +68,59 @@ public class ListMatrix extends AbstractMatrix {
     private int maxColumnId;
 
     /**
+     * Number of unique row ids
+     */
+    protected int rowCount;
+    /**
+     * Number of unique column ids
+     */
+    protected int columnCount;
+
+    public ListMatrix(){
+
+    }
+
+    public ListMatrix(ListMatrix listMatrix){
+        init(listMatrix);
+    }
+
+    /**
+     * Core initialization method used in all other types of initializations
+     * @param rows
+     * @param columns
+     * @param values
+     * @param isIdShared
+     * @return
+     */
+    public ListMatrix init(int[] rows, int[] columns, float[] values, boolean isIdShared){
+        setRows(rows);
+        setColumns(columns);
+        setValues(values);
+        this.isIdShared = isIdShared;
+        calculateStatistics(isIdShared); // calculate number of unique row and column ids
+        onMatrixBuilt(); // to let extended classes build their data structures on top
+        return this;
+    }
+
+    public ListMatrix init(ListMatrix list){
+        setMaps(list.getToNormal(), list.getToRaw());
+        setStatus(list.isSorted(), list.isUnique(), list.isNormalized(),
+                list.isIdAscending(), list.getSortMode());
+        return init(list.getRows(),
+                list.getColumns(), list.getValues(), list.isIdShared());
+    }
+    /**
      * @param rowColumns rowColumns[p] = [row, column]
      * @param values
      */
-    public void init(int[][] rowColumns, float[] values, boolean isIdShared){
+    public ListMatrix init(int[][] rowColumns, float[] values, boolean isIdShared){
         int[] rows = new int[rowColumns.length];
         int[] columns = new int[rowColumns.length];
         for(int p = 0 ; p < rowColumns.length ; p++){
             rows[p] = rowColumns[p][0];
             columns[p] = rowColumns[p][1];
         }
-        init(rows, columns, values, isIdShared);
-    }
-
-    public ListMatrix init(int[] rows, int[] columns, float[] values, boolean isIdShared){
-        setRows(rows);
-        setColumns(columns);
-        setValues(values);
-        this.isIdShared = isIdShared;
-        // calculate number of unique row and column ids
-        calculateCounts(isIdShared);
-        return this;
+        return init(rows, columns, values, isIdShared);
     }
 
     /**
@@ -129,14 +152,8 @@ public class ListMatrix extends AbstractMatrix {
                 }
             }
         }
-        setRows(rows);
-        setColumns(columns);
-        setValues(values);
-        this.isIdShared = isIdShared;
         setStatus(true, true, true, true, MODE_NOT_CLONE);
-        // calculate number of unique row and column ids
-        calculateCounts(isIdShared);
-        return this;
+        return init(rows, columns, values, isIdShared);
     }
 
     public ListMatrix init(float[][] values, int[][] columnIndices, boolean isIdShared, boolean isNormalized){
@@ -166,15 +183,8 @@ public class ListMatrix extends AbstractMatrix {
                 }
             }
         }
-        setRows(rowsList);
-        setColumns(columnsList);
-        setValues(valuesList);
-        this.isIdShared = isIdShared;
         // There is no guarantee about the structure of sparse matrix
-        setStatus(false, false, isNormalized, false, MODE_NOT_CLONE);
-        // calculate number of unique row and column ids
-        calculateCounts(isIdShared);
-        return this;
+        return init(rowsList, columnsList, valuesList, isIdShared);
     }
 
     /**
@@ -217,7 +227,7 @@ public class ListMatrix extends AbstractMatrix {
 
         if(isUnique || (sortMode & MODE_REMOVE_DUPLICATE) == 0){
             if(clone){
-                ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
+                ListMatrix listMatrix = newInstance().init(rows, columns, values, isIdShared())
                         .setStatus(true, isUnique, isNormalized(), isIdAscending, sortMode);
                 return listMatrix;
             }else{
@@ -246,39 +256,71 @@ public class ListMatrix extends AbstractMatrix {
             uValues[uniqueIndex] = values[p];
             uniqueIndex++;
         }
-        ListMatrix listMatrix = new ListMatrix().init(uRows, uColumns, uValues, isIdShared())
+        ListMatrix listMatrix = newInstance().init(uRows, uColumns, uValues, isIdShared())
                 .setStatus(true, true, isNormalized(), isIdAscending(), getSortMode());
         return listMatrix;
     }
 
     /**
-     * Normalize the row and column ids to 0...L-1 without missing values
+     * Normalize the row and column ids according to the given normalization vectors
+     * @param toNormal maps raw id to normalized id, it will be built if not provided
+     * @param mapToRaw maps normalized ids back to raw ids, it will be built if not provided
      * @param clone
      * @return
      */
-    public ListMatrix normalize(boolean clone){
+    public ListMatrix normalize(OpenIntIntHashMap[] mapToNormal, int[][] mapToRaw, boolean clone){
         int[] rows = clone ? new int[getRows().length] : getRows();
         int[] columns = clone ? new int[getColumns().length] : getColumns();
-        // Normalize ids
-        OpenIntIntHashMap[] toNormal = new OpenIntIntHashMap[2]; // for rows and columns
-        int[][] toRaw = new int[2][];
-        if(isIdShared()){
-            toNormal[ROW] = Util.normalizeIds(getRows(), getColumns());
-            toNormal[COL] = (OpenIntIntHashMap) toNormal[ROW].clone();
-            toRaw[ROW] = new int[toNormal[ROW].size()];
-            toRaw[COL] = toRaw[ROW].clone();
+        // Create normalization data structure
+        OpenIntIntHashMap[] toNormal = new OpenIntIntHashMap[2];// for rows and columns
+        if(mapToNormal == null) {
+            if(isIdShared()) {
+                toNormal[ROW] = Util.normalizeIds(getRows(), getColumns());
+                toNormal[COL] = (OpenIntIntHashMap) toNormal[ROW].clone();
+            }else{
+                toNormal[ROW] = Util.normalizeIds(getRows());
+                toNormal[COL] = Util.normalizeIds(getColumns());
+            }
         }else{
-            toNormal[ROW] = Util.normalizeIds(getRows());
-            toNormal[COL] = Util.normalizeIds(getColumns());
-            toRaw[ROW] = new int[toNormal[ROW].size()]; // assuming ids are mapped to 0...N-1
-            toRaw[COL] = new int[toNormal[COL].size()];
+            toNormal = mapToNormal;
         }
-        // Change row and column ids from raw to normal
-        for(int p = 0 ; p < rows.length ; p++){
-            rows[p] = toNormal[ROW].get(getRows()[p]);
+        int minRowId = Integer.MAX_VALUE;
+        int maxRowId = Integer.MIN_VALUE;
+        // Change row ids from raw to normal
+        for(int rowId, p = 0 ; p < rows.length ; p++){
+            rows[p] = rowId = toNormal[ROW].get(getRows()[p]);
+            if(rowId < minRowId){
+                minRowId = rowId;
+            }
+            if(rowId > maxRowId){
+                maxRowId = rowId;
+            }
         }
-        for(int p = 0 ; p < rows.length ; p++){
-            columns[p] = toNormal[COL].get(getColumns()[p]);
+        // Change column ids from raw to normal
+        int minColumnId = Integer.MAX_VALUE;
+        int maxColumnId = Integer.MIN_VALUE;
+        for(int columnId, p = 0 ; p < columns.length ; p++){
+            columns[p] = columnId = toNormal[COL].get(getColumns()[p]);
+            if(columnId < minColumnId){
+                minColumnId = columnId;
+            }
+            if(columnId > maxColumnId){
+                maxColumnId = columnId;
+            }
+        }
+        // Unify max and min ids if row and column ids are shared
+        if(isIdShared()){
+            minRowId = minColumnId = Math.min(minColumnId, minRowId);
+            maxRowId = maxColumnId = Math.max(maxRowId, maxColumnId);
+        }
+        // Create data structure for mapping normalized ids back to raw ids
+        int[][] toRaw;
+        if(mapToRaw == null){
+            toRaw = new int[2][];
+            toRaw[ROW] = new int[maxRowId + 1];
+            toRaw[COL] = new int[maxColumnId + 1];
+        }else{
+            toRaw = mapToRaw;
         }
         // Construct the toRaw id mapper for rows and columns
         for(int dim = 0 ; dim < 2 ; dim++){
@@ -287,20 +329,21 @@ public class ListMatrix extends AbstractMatrix {
             for(int rawId, i = 0 ; i < rawIds.size() ; i++){
                 rawId = rawIds.get(i);
                 toRawDim[toNormal[dim].get(rawId)] = rawId;
-//                toNormal[dim].forEach((rawId, normalId) -> );
             }
-//            toNormal[dim].forEach((rawId, normalId) -> toRawDim[normalId] = rawId);
         }
+
+
         // Return the value
         if(clone){
-            return new ListMatrix().init(rows, columns, getValues().clone(), isIdShared())
+            return newInstance().init(rows, columns, getValues().clone(), isIdShared())
                     .setMaps(toNormal, toRaw)
                     .setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
         }else{
             // Change (min, max) value of row and column ids to normalized values
-            minRowId = minColumnId = 0;
-            maxRowId = toRaw[ROW].length - 1;
-            maxColumnId = toRaw[COL].length - 1;
+            this.minRowId = minRowId;
+            this.minColumnId = minColumnId;
+            this.maxRowId = maxRowId;
+            this.maxColumnId = maxColumnId;
             setMaps(toNormal, toRaw);
             setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
             return this;
@@ -308,33 +351,41 @@ public class ListMatrix extends AbstractMatrix {
     }
 
     /**
-     * Normalize the row and column ids to 0...L-1 without missing values
-     * Also map the normalized ids back to given raw ids (if any),
-     * This is useful for hierarchical matrices which may point to the same entity ids
+     * Normalize the ids with provided maps, but maps back to previous raw ids (if any)
+     * @param mapToNormal used as the raw id to normal id mapper (will not be cloned)
      * @param clone
-     * @param mapToOldIds
      * @return
      */
-    public ListMatrix normalize(boolean clone, boolean mapToOldIds){
+    public ListMatrix normalizeKeepRawIds(OpenIntIntHashMap[] mapToNormal, boolean clone){
         int[][] oldRawIds = getToRaw();
-        ListMatrix normalizedList = normalize(clone);
-        if(oldRawIds == null || !mapToOldIds){
+        ListMatrix normalizedList = normalize(mapToNormal, null, clone);
+        if(oldRawIds == null){
             return normalizedList;
         }
         // Example: [3, 4, 5] -> [0, 1, 2], then sub matrix [1, 2] -> [0, 1]
-        // We want to map [0, 1] back to [4, 5] instead of [1, 2]
+        // We want to maps [0, 1] back to [4, 5] instead of [1, 2]
         int[][] newRawIds = normalizedList.getToRaw();
         OpenIntIntHashMap[] newNormalIds = normalizedList.getToNormal();
         newNormalIds[ROW].clear();
         newNormalIds[COL].clear();
         for(int dim = 0 ; dim < 2 ; dim++){
-            for(int normalizedId = 0 ; normalizedId < newRawIds[dim].length ; normalizedId++){
+            int minId = dim == ROW ? normalizedList.getMinRowId() : normalizedList.getMinColumnId();
+            int maxId = dim == ROW ? normalizedList.getMaxRowId() : normalizedList.getMaxColumnId();
+            for(int normalizedId = minId ; normalizedId <= maxId ; normalizedId++){
                 int oldRawId = oldRawIds[dim][newRawIds[dim][normalizedId]];
                 newRawIds[dim][normalizedId] = oldRawId;
                 newNormalIds[dim].put(oldRawId, normalizedId);
             }
         }
         return normalizedList;
+    }
+
+    public ListMatrix normalize(boolean clone){
+        return normalize(null, null, clone);
+    }
+
+    public ListMatrix normalizeKeepRawIds(boolean clone){
+        return normalizeKeepRawIds(null, clone);
     }
 
     /**
@@ -357,7 +408,7 @@ public class ListMatrix extends AbstractMatrix {
             uRows[p] = toRaw[ROW][rows[p]];
             uColumns[p] = toRaw[COL][columns[p]];
         }
-        ListMatrix unNormalizedList = clone ? new ListMatrix() : this;
+        ListMatrix unNormalizedList = clone ? newInstance() : this;
         if(clone){
             unNormalizedList.init(uRows, uColumns, getValues().clone(), isIdShared());
         }else{
@@ -382,7 +433,7 @@ public class ListMatrix extends AbstractMatrix {
                 tRows[p] = columns[p];
                 tColumns[p] = rows[p];
             }
-            transposedList = new ListMatrix()
+            transposedList = newInstance()
                     .init(tRows, tColumns, getValues().clone(), isIdShared());
         }else{
             transposedList = this;
@@ -392,7 +443,7 @@ public class ListMatrix extends AbstractMatrix {
             rowCount = getColumnCount();
             columnCount = rowCountTemp;
         }
-        // swap toNormal and toRaw id maps between row and column
+        // swap maps and toRaw id maps between row and column
         if(isNormalized()){
             OpenIntIntHashMap toNormalRowTemp = getToNormal()[ROW];
             int[] toRawRowTemp = getToRaw()[ROW];
@@ -410,7 +461,7 @@ public class ListMatrix extends AbstractMatrix {
     /**
      * Decompose the list into K lists partitioned by the input,
      * negative partitions are regarded as discarding the corresponding row or column,
-     * partitions are assumed to be normalized into 0...K-1,
+     * partitions are ASSUMED to be normalized into 0...K-1,
      * Of course pairs between different partitions will be ignored
      * @param partition partitions[i] = k means placing i-th row and in list k
      * @return
@@ -449,14 +500,14 @@ public class ListMatrix extends AbstractMatrix {
         }
         /*
             Decomposition of a sorted/unique/ascending list remains sorted/unique/ascending
-            Parents' toRaw/toNormal mapping is shared with subGraphs, they must be cloned
+            Parents' toRaw/maps mapping is shared with subGraphs, they must be cloned
             or recreated if a change is required, specially for toRaw as it must be changed
             per normalization
          */
         ListMatrix[] lists = new ListMatrix[groupCount];
         for(int pr = 0 ; pr < rows.length ; pr++){
             if(rows[pr] == null) continue; // a sub-graph without link
-            lists[pr] = new ListMatrix()
+            lists[pr] = newInstance()
                     .init(rows[pr], columns[pr], values[pr], isIdShared())
                     .setStatus(isSorted(), isUnique(), false, isIdAscending(), getSortMode())
                     .setMaps(getToNormal(), getToRaw());
@@ -488,7 +539,7 @@ public class ListMatrix extends AbstractMatrix {
         int estimatedPairs = (int) (validPairs * (double) groupCount / partition.length);// edge count * K/N
         HashMap<Long, Float> pairs = new HashMap<Long, Float>(estimatedPairs);
 //        Map<Integer, Float> pairs = HashIntFloatMaps.newUpdatableMap();
-        // map id of row/columns to their raw (unNormalized) row id
+        // maps id of row/columns to their raw (unNormalized) row id
         int[][] toRaw = new int[2][];
         toRaw[ROW] = new int[groupCount];
         toRaw[COL] = new int[groupCount];
@@ -523,7 +574,7 @@ public class ListMatrix extends AbstractMatrix {
             values[insertAt] = (float) pairs.get(uniqueId);
             insertAt++;
         }
-        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
+        ListMatrix foldedMatrix = newInstance().init(rows, columns, values, isIdShared())
                 .setMaps(toNormal, toRaw)
                 .setStatus(false, true, true, isIdAscending(), MODE_NOT_CLONE);
         return foldedMatrix;
@@ -554,7 +605,7 @@ public class ListMatrix extends AbstractMatrix {
                 insertAt++;
             }
         }
-        ListMatrix subList = new ListMatrix().init(subRows, subColumns, subValues, isIdShared())
+        ListMatrix subList = newInstance().init(subRows, subColumns, subValues, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         subList.toNormal = getToNormal();
         subList.toRaw = getToRaw();
@@ -580,19 +631,25 @@ public class ListMatrix extends AbstractMatrix {
         HashMap<Long, Boolean> visitedCell = new HashMap<Long, Boolean>(2 * rows.length);
         int idRange = Util.max(rows, columns) + 1;
         int cellCount = 0;
+        int diagonalCount = 0;
         for(int p = 0 ; p < rows.length ; p++){
             long uniqueId = idRange * rows[p] + columns[p];
             if(!visitedCell.containsKey(uniqueId)){ // find both the cell and its mirror
-                long mirrorUniqueId = idRange * columns[p] + rows[p];
                 visitedCell.put(uniqueId, true);
-                visitedCell.put(mirrorUniqueId, true);
                 cellCount++;
+                if(rows[p] == columns[p]){
+                    diagonalCount++;
+                    continue;
+                }
+                long mirrorUniqueId = idRange * columns[p] + rows[p];
+                visitedCell.put(mirrorUniqueId, true);
             }
         }
         // Add each cell and its mirror to new list matrix
-        int[] symRows = new int[2 * cellCount];
-        int[] symColumns = new int[2 * cellCount];
-        float[] symValues = new float[2 * cellCount];
+        int symCellCount = 2 * cellCount - diagonalCount; // count diagonal cells only once
+        int[] symRows = new int[symCellCount];
+        int[] symColumns = new int[symCellCount];
+        float[] symValues = new float[symCellCount];
         visitedCell.clear();
         int insertAt = 0;
         for(int p = 0 ; p < rows.length ; p++){
@@ -602,6 +659,7 @@ public class ListMatrix extends AbstractMatrix {
                 symColumns[insertAt] = columns[p];
                 symValues[insertAt] = values[p];
                 insertAt++;
+                if(rows[p] == columns[p]) continue; // row = column
                 symRows[insertAt] = columns[p];
                 symColumns[insertAt] = rows[p];
                 symValues[insertAt] = values[p];
@@ -613,7 +671,7 @@ public class ListMatrix extends AbstractMatrix {
             }
         }
         // This operation breaks id sort but guarantees uniqueness of cells, and ids are not changed
-        ListMatrix symmetric = new ListMatrix().init(symRows, symColumns, symValues, isIdShared())
+        ListMatrix symmetric = newInstance().init(symRows, symColumns, symValues, isIdShared())
                 .setStatus(false, true, isNormalized(), false, getSortMode())
                 .setMaps(getToNormal(), getToRaw());
         return symmetric;
@@ -656,7 +714,7 @@ public class ListMatrix extends AbstractMatrix {
         int[] rows = getRows().clone();
         int[] columns = getColumns().clone();
         float[] values = getValues().clone();
-        ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
+        ListMatrix listMatrix = newInstance().init(rows, columns, values, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         listMatrix.toRaw = new int[2][];
         listMatrix.toNormal = new OpenIntIntHashMap[2];
@@ -670,7 +728,7 @@ public class ListMatrix extends AbstractMatrix {
     /**
      * Calculate and set the unique number of row and column ids
      */
-    private void calculateCounts(boolean isIdShared){
+    private void calculateStatistics(boolean isIdShared){
         if(isIdShared){
             ArrayStatistics statistics = Statistics.array(rows, columns);
             this.rowCount = this.columnCount = statistics.uniqueCount;
@@ -702,8 +760,13 @@ public class ListMatrix extends AbstractMatrix {
     }
 
     @Override
-    public AbstractMatrix newInstance() {
+    public ListMatrix newInstance() {
         return new ListMatrix();
+    }
+
+    @Override
+    public void onMatrixBuilt() {
+
     }
 
     public ListMatrix setMaps(OpenIntIntHashMap[] toNormal, int[][] toRaw){
@@ -715,6 +778,14 @@ public class ListMatrix extends AbstractMatrix {
     public ListMatrix setColumns(int[] columns) {
         this.columns = columns;
         return this;
+    }
+
+    /**
+     * Whether list has no element
+     * @return
+     */
+    public boolean isEmpty(){
+        return  getRowCount() <= 0;
     }
 
     public int[] getRows() {
@@ -737,6 +808,14 @@ public class ListMatrix extends AbstractMatrix {
     public ListMatrix setValues(float[] values) {
         this.values = values;
         return this;
+    }
+
+    public int getMinColumnId() {
+        return minColumnId;
+    }
+
+    public int getMinRowId() {
+        return minRowId;
     }
 
     public int getMaxColumnId() {
@@ -786,6 +865,4 @@ public class ListMatrix extends AbstractMatrix {
     public int getRowCount() {
         return rowCount;
     }
-
-
 }

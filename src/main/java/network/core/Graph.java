@@ -10,10 +10,6 @@ public class Graph extends SparseMatrix {
      */
     float[][] attributes;
 
-    public Graph(ListMatrix listMatrix){
-        super(listMatrix);
-    }
-
     /**
      * Decompose graph based on the partition, normalize node ids of each sub-graph
      * Partitions are assumed to be normalized into 0..K-1
@@ -24,27 +20,30 @@ public class Graph extends SparseMatrix {
     public Graph[] decompose(int[] partition){
         SparseMatrix[] sparseMatrices = super.decompose(partition);
         Graph[] subGraphs = new Graph[sparseMatrices.length];
-        for(int pr = 0 ; pr < subGraphs.length; pr++){
+        // Convert array types
+        for(int pr = 0 ; pr < subGraphs.length; pr++) {
             subGraphs[pr] = (Graph) sparseMatrices[pr];
-            if(!hasAttributes() || !subGraphs[pr].hasEdge()){
+        }
+        // Copy node attributes to new partitions (if any)
+        for(int pr = 0 ; pr < subGraphs.length && hasAttributes(); pr++){
+            if(!subGraphs[pr].hasEdge()){
                 continue; // no node attributes to copy or sub-graph is empty
             }
-            ListMatrix subMatrix = subGraphs[pr].getListMatrix();
-            // Copy node attributes to new partitions
-            int subNodeCount = subMatrix.getRowCount();
+            Graph subGraph = subGraphs[pr];
+            int subNodeCount = subGraph.getRowCount();
             float[][] attributes = new float[subNodeCount][];
-            OpenIntIntHashMap toNormal = getListMatrix().getToNormal()[0];
+            OpenIntIntHashMap toNormal = subGraph.getToNormal()[0];
             for(int normalizedId = 0 ; normalizedId < subNodeCount ; normalizedId++){
                 /*
                     raw id of normalized nodeId of sub-graphs
                     are mapped to the same rawId as their parent graph
                     so their raw id can be mapped back to nodeIds of this parent
-                    using parent's toNormal
+                    using parent's maps
                  */
-                int rawId = subMatrix.getToRaw()[0][normalizedId];
+                int rawId = subGraph.getToRaw()[0][normalizedId];
                 attributes[normalizedId] = getAttributes()[toNormal.get(rawId)].clone();
             }
-            subGraphs[pr].setAttributes(attributes);
+            subGraph.setAttributes(attributes);
         }
         return subGraphs;
     }
@@ -61,13 +60,12 @@ public class Graph extends SparseMatrix {
             return folded; // no attributes to aggregate
         }
         // Aggregate the attributes of nodes into their superNode
-        ListMatrix foldedList = folded.getListMatrix();
-        int groupIdRange = foldedList.getMaxRowId() + 1;
+        int groupIdRange = folded.getMaxRowId() + 1;
         int attributeCount = this.attributes[0].length;
         float[][] attributes = new float[groupIdRange][attributeCount];
         // Aggregate attribute of nodes into their group node
         // Assumption: superNodes are normalized version of their groupIds in partition
-        OpenIntIntHashMap groupToSuperGroup = foldedList.getToNormal()[ROW];
+        OpenIntIntHashMap groupToSuperGroup = folded.getToNormal()[ROW];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
             int superGroupId = groupToSuperGroup.get(partition[nodeId]);
             for(int attr = 0 ; attr < attributeCount ; attr++){
@@ -83,19 +81,19 @@ public class Graph extends SparseMatrix {
      * @return
      */
     public Graph getTransitionProbability(){
-        float[][] probabilities = new float[values.length][];
-        for(int nodeId = 0 ; nodeId < values.length ; nodeId++){
+        float[][] probabilities = new float[sparseValues.length][];
+        for(int nodeId = 0 ; nodeId < sparseValues.length ; nodeId++){
             int[] neighbors = columnIndices[nodeId];
             probabilities[nodeId] = new float[neighbors.length];
             float totalOutLink = 0;
             for(int n = 0 ; n < neighbors.length ; n++){
-                float value = values[nodeId][n];
+                float value = sparseValues[nodeId][n];
                 if(value > 0) {
                     totalOutLink += value;
                 }
             }
             for(int n = 0 ; n < neighbors.length ; n++){
-                float value = values[nodeId][n];
+                float value = sparseValues[nodeId][n];
                 if(value > 0) {
                     probabilities[nodeId][n] = value / totalOutLink;
                 }else if(value < 0){
@@ -104,7 +102,7 @@ public class Graph extends SparseMatrix {
             }
         }
         Graph tGraph = clone();
-        tGraph.values = probabilities;
+        tGraph.sparseValues = probabilities;
         return tGraph;
     }
 
@@ -126,7 +124,7 @@ public class Graph extends SparseMatrix {
      * @return
      */
     public int getNodeCount(){
-        return hasList() ? getListMatrix().getRowCount() : 0;
+        return getRowCount();
     }
 
     /**
@@ -134,11 +132,11 @@ public class Graph extends SparseMatrix {
      * @return
      */
     public int getNodeMaxId(){
-        return hasList() ? getListMatrix().getMaxRowId() : -1;
+        return getMaxRowId();
     }
 
     public int getEdgeCount(){
-        return hasList() ? getListMatrix().getRows().length : 0;
+        return getRows().length;
     }
 
     public Graph setAttributes(float[][] attributes) {
@@ -174,13 +172,12 @@ public class Graph extends SparseMatrix {
      * @return
      */
     public boolean hasEdge(){
-        // Each member of the list matrix is an edge
-        return hasList();
+        return !isEmpty();// Each member of the list matrix is an edge
     }
 
     @Override
     public Graph newInstance() {
-        return new Graph(null);
+        return new Graph();
     }
 
     @Override

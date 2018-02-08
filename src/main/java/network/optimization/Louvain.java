@@ -1,8 +1,7 @@
 package network.optimization;
 
-import network.core.Graph;
-import network.core.ListMatrix;
-import network.core.Util;
+import network.core.*;
+
 import static network.core.ListMatrix.ROW;
 
 /**
@@ -11,7 +10,7 @@ import static network.core.ListMatrix.ROW;
  */
 abstract public class Louvain implements Runnable{
 
-    private Graph graph;
+    private MultiGraph graph;
     private int[] partition;
     private int foldCount; // number of times graph is folded into partition for hierarchical detection
     private int id; // to be identified among other runnable-s
@@ -20,7 +19,7 @@ abstract public class Louvain implements Runnable{
 
     }
 
-    public Louvain init(Graph graph, int[] initialPartition, int foldCount){
+    public Louvain init(MultiGraph graph, int[] initialPartition, int foldCount){
         this.graph = graph;
         this.partition = initialPartition;
         this.foldCount = foldCount;
@@ -32,7 +31,7 @@ abstract public class Louvain implements Runnable{
         this.partition = detect(graph, partition,foldCount);
     }
 
-    public int[] detect(Graph graph, int[] initialPartition, int foldCount){
+    public int[] detect(MultiGraph graph, int[] initialPartition, int foldCount){
         this.foldCount = foldCount;
         int[] partition = detect(graph, initialPartition);
 //        Shared.log(Thread.currentThread().getId() + ": Louvain on " + graph.getNodeCount() + " nodes finished");
@@ -43,7 +42,7 @@ abstract public class Louvain implements Runnable{
      * Perform detect optimization on the graph with the given initial partition
      * @return
      */
-    protected int[] detect(Graph graph, int[] initialPartition){
+    protected int[] detect(MultiGraph graph, int[] initialPartition){
         /*
          * A node n could be an aggregation of multiple nodes folded into on super node
          * pNC: positive weight from node n to group c, where group(n) = c
@@ -57,7 +56,7 @@ abstract public class Louvain implements Runnable{
          */
         int[] partition = initialPartition.clone();
         if(partition.length == 1) return partition;
-        Graph transpose = (Graph) graph.transpose(true);
+        Graph transpose = graph.transpose(true);
         double improvement = greedy(graph, transpose, partition);
         if(improvement <= 0.0 || foldCount == 0.0){
             // No further improvement was made by coarse-grain
@@ -66,7 +65,7 @@ abstract public class Louvain implements Runnable{
         }
         // Rebuild the network of communities:
         // Fold negative & positive sub-graphs separately according to partition
-        Graph foldedGraph = graph.fold(partition);
+        MultiGraph foldedGraph = graph.fold(partition);
         // At least 1% decrease in network size is expected
         double sizeRatio = (double) foldedGraph.getNodeCount() / graph.getNodeCount();
         if(sizeRatio > 0.99 || foldedGraph.getNodeCount() <= 1){
@@ -102,7 +101,7 @@ abstract public class Louvain implements Runnable{
      * @param partition this is the initial partition, changes are applied on this
      * @return improvement in objective function
      */
-    abstract protected double greedy(Graph graph, Graph transpose, int[] partition);
+    abstract protected double greedy(MultiGraph graph, Graph transpose, int[] partition);
 
     /**
      * Local change in the objective function by moving nodes between groups
@@ -120,7 +119,7 @@ abstract public class Louvain implements Runnable{
      * @param parameters
      * @return
      */
-    abstract public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
+    abstract public double evaluate(MultiGraph graph, int[] partition, ObjectiveParameters parameters);
 
     public int[] getPartition() {
         return partition;

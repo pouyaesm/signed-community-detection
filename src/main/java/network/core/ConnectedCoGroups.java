@@ -17,7 +17,6 @@ public class ConnectedCoGroups extends ConnectedComponents {
 
     /**
      * Neighbor nodes are considered connected if reside in the same group
-     * and have a positive link
      * @param nodeId
      * @param neighborId id of neighbor node
      * @param neighborIndex index of neighbor in the sparse array of nodeId
@@ -25,7 +24,6 @@ public class ConnectedCoGroups extends ConnectedComponents {
      */
     @Override
     protected boolean isConnected(int nodeId, int neighborId, int neighborIndex) {
-        float linkValue = getGraph().getValues(nodeId)[neighborIndex];
-        return linkValue > 0 && partition[nodeId] == partition[neighborId];
+        return partition[nodeId] == partition[neighborId];
     }
 }

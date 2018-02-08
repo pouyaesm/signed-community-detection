@@ -2,6 +2,9 @@ package network.optimization;
 
 import network.core.*;
 
+import static network.core.SiGraph.NEGATIVE;
+import static network.core.SiGraph.POSITIVE;
+
 /**
  * Graph partitioning based on Constant Potts Model objective function
  */
@@ -16,12 +19,12 @@ public class CPM extends RosvallBergstrom {
      */
     private float resolution;
 
-    public int[] detect(Graph graph, float resolution, float alpha, int refineCount){
-        Graph[] graphs = {graph};
+    public int[] detect(MultiGraph graph, float resolution, float alpha, int refineCount){
+        MultiGraph[] graphs = {graph};
         return detect(graphs, resolution, alpha, refineCount)[0];
     }
 
-    public int[][] detect(Graph[] graphs, float resolution, float alpha, int refineCount){
+    public int[][] detect(MultiGraph[] graphs, float resolution, float alpha, int refineCount){
         if(alpha < 0 || alpha > 1 || resolution < 0){
             try {
                 throw new Exception("alpha must be [0, 1], and resolution > 0");
@@ -32,7 +35,7 @@ public class CPM extends RosvallBergstrom {
         }
         setAlpha(alpha);
         setResolution(resolution);
-        for(Graph graph : graphs) {
+        for(MultiGraph graph : graphs) {
             /*
                 Set the number of nodes inside each node (which is 1)
                 this size will increase during the folding of nodes into one node
@@ -44,15 +47,17 @@ public class CPM extends RosvallBergstrom {
             graph.setAttributes(nodeSizes);
         }
         int[][] bestPartition = partition(graphs, refineCount);
+        // Inside a group, place each positively connected component inside a separate new group
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
-            bestPartition[graphId] = new ConnectedCoGroups(graphs[graphId], bestPartition[graphId])
-                    .find().getComponents();
+            bestPartition[graphId] = new ConnectedCoGroups(
+                    graphs[graphId].getGraph(POSITIVE), bestPartition[graphId]
+            ).find().getComponents();
         }
         return bestPartition;
     }
 
     @Override
-    protected double greedy(Graph graph, Graph transpose, int[] partition) {
+    protected double greedy(MultiGraph graph, Graph transpose, int[] partition) {
         int groupIdRange = Util.max(partition) + 1;
         int N = graph.getNodeCount();
         // Queue of neighbor groups and their statistics (groupId, pCpK, pKCp, nCpK, nKCp)
@@ -100,58 +105,60 @@ public class CPM extends RosvallBergstrom {
                 // Get outward-inward neighbor groups of nodeId
                 // For outward neighbors graph is used and for inward neighbors its transpose is used
                 // since the sparse data structure is row-based and best suited for column traverse
-                Graph outOrIn;
                 int outward = 0; // index of outward direction by convention
                 for(int direction = 0 ; direction < 2 ; direction++){
-                    outOrIn = direction == outward ? graph : transpose;
-                    if(!outOrIn.hasEdge()){
-                        continue; // no edge to process
-                    }
-                    int[] neighbors = outOrIn.getColumns(nodeId);
-                    float[] linkValues = outOrIn.getValues(nodeId);
-                    for(int n = 0 ; n < neighbors.length ; n++){
-                        int neighborId = neighbors[n];
-                        double linkValue = linkValues[n];
-                        int neighborGroupId = partition[neighborId];
-                        if(nodeId == neighborId){ // self loop (will be counted two times)
-                            if(linkValue > 0) pPositive.Kself = linkValue;
-                            else pNegative.Kself = -linkValue;
-                        }
-                        if(groupId == neighborGroupId){ // link inside the group
-                            if(direction == outward){ // from node to its group
-                                if(linkValue > 0) pPositive.KC += linkValue;
-                                else pNegative.KC -= linkValue;
-                            }else{ // from group to node
-                                if(linkValue > 0) pPositive.CK += linkValue;
-                                else pNegative.CK -= linkValue;
+                    Graph outOrIn = direction == outward ? graph : transpose;
+                    if(outOrIn.isEmpty()) continue; // no edge to process
+                    for(int sign = 0 ; sign < 2 ; sign++) {
+                        Graph posOrNeg = sign == POSITIVE ?
+                                graph.getGraph(POSITIVE) : graph.getGraph(NEGATIVE);
+                        int[] neighbors = posOrNeg.getColumns(nodeId);
+                        if(neighbors == null) continue;
+                        float[] linkValues = posOrNeg.getValues(nodeId);
+                        for (int n = 0; n < neighbors.length; n++) {
+                            int neighborId = neighbors[n];
+                            double linkValue = linkValues[n];
+                            int neighborGroupId = partition[neighborId];
+                            if (nodeId == neighborId) { // self loop (will be counted two times)
+                                if (linkValue > 0) pPositive.Kself = linkValue;
+                                else pNegative.Kself = -linkValue;
                             }
-                        }else{ // link toward neighbor groups
-                            // first time this neighbor is visited ?
-                            int neighborQueuePosition;
-                            if(neighborGroupQueueIndex[neighborGroupId] == -1){
-                                if(groupQueue[queueHead] == null) groupQueue[queueHead] = new double[5];
-                                groupQueue[queueHead][0] = neighborGroupId;
-                                neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId] = queueHead;
-                                queueHead++;
-                            }else{
-                                neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId];
+                            if (groupId == neighborGroupId) { // link inside the group
+                                if (direction == outward) { // from node to its group
+                                    if (linkValue > 0) pPositive.KC += linkValue;
+                                    else pNegative.KC -= linkValue;
+                                } else { // from group to node
+                                    if (linkValue > 0) pPositive.CK += linkValue;
+                                    else pNegative.CK -= linkValue;
+                                }
+                            } else { // link toward neighbor groups
+                                // first time this neighbor is visited ?
+                                int neighborQueuePosition;
+                                if (neighborGroupQueueIndex[neighborGroupId] == -1) {
+                                    if (groupQueue[queueHead] == null) groupQueue[queueHead] = new double[5];
+                                    groupQueue[queueHead][0] = neighborGroupId;
+                                    neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId] = queueHead;
+                                    queueHead++;
+                                } else {
+                                    neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId];
+                                }
+                                if (direction == outward) {  // from node to neighbor group
+                                    if (linkValue > 0) groupQueue[neighborQueuePosition][2] += linkValue;
+                                    else groupQueue[neighborQueuePosition][4] -= linkValue;
+                                } else { // neighbor group to node
+                                    if (linkValue > 0) groupQueue[neighborQueuePosition][1] += linkValue;
+                                    else groupQueue[neighborQueuePosition][3] -= linkValue;
+                                }
                             }
-                            if(direction == outward) {  // from node to neighbor group
-                                if(linkValue > 0) groupQueue[neighborQueuePosition][2] += linkValue;
-                                else groupQueue[neighborQueuePosition][4] -= linkValue;
-                            }else{ // neighbor group to node
-                                if(linkValue > 0) groupQueue[neighborQueuePosition][1] += linkValue;
-                                else groupQueue[neighborQueuePosition][3] -= linkValue;
+                            if (direction == outward) {
+                                if (linkValue > 0) pPositive.Kout += linkValue;
+                                else pNegative.Kout -= linkValue;
+                            } else {
+                                if (linkValue > 0) pPositive.Kin += linkValue;
+                                else pNegative.Kin -= linkValue;
                             }
-                        }
-                        if(direction == outward){
-                            if(linkValue > 0) pPositive.Kout += linkValue;
-                            else pNegative.Kout -= linkValue;
-                        }else{
-                            if(linkValue > 0) pPositive.Kin += linkValue;
-                            else pNegative.Kin -= linkValue;
-                        }
-                    } // neighbors of nodeId
+                        } // neighbors of nodeId
+                    } // positive or negative sub-graph
                 } // graphs for inward or outward neighbors
                 /*
                     In formulation of CPM object, each node set is considered in both its group
@@ -216,17 +223,18 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
+    public double evaluate(MultiGraph graph, int[] partition, ObjectiveParameters parameters) {
         CPMParameters cpmParameters = (CPMParameters)parameters;
-        PartitionStatistics statistics = Statistics.partition(partition, graph);
+        PartitionStatistics posStats = Statistics.partition(partition, graph.getGraph(POSITIVE));
+        PartitionStatistics negStats = Statistics.partition(partition, graph.getGraph(NEGATIVE));
         double positiveHamiltonian = 0;
         double negativeHamiltonian = 0;
-        for(int g = 0; g < statistics.size.length ; g++){
-            int nodeCount  = statistics.size[g];
+        for(int g = 0; g < posStats.size.length ; g++){
+            int nodeCount  = posStats.size[g];
             if(nodeCount > 0){
-                positiveHamiltonian -= (statistics.positiveCellValue[g]
+                positiveHamiltonian -= (posStats.positiveCellValue[g]
                         - cpmParameters.resolution * nodeCount * nodeCount); // E+(c) - λ N(c)^2
-                negativeHamiltonian -= statistics.negativeCellValue[g]; // E-(c) - 0 * N(c)^2
+                negativeHamiltonian -= negStats.negativeCellValue[g]; // E-(c) - 0 * N(c)^2
             }
         }
         double hamiltonian = cpmParameters.alpha * positiveHamiltonian

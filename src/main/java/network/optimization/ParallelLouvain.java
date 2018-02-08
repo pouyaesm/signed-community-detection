@@ -1,6 +1,6 @@
 package network.optimization;
 
-import network.core.Graph;
+import network.core.MultiGraph;
 import network.core.Util;
 import network.utils.MultiRunnable;
 
@@ -21,7 +21,7 @@ abstract public class ParallelLouvain extends Louvain {
         setThreadCount(1);
     }
 
-    public int[][] detect(Graph[] graphs, int foldCount){
+    public int[][] detect(MultiGraph[] graphs, int foldCount){
         int[][] initialPartitions = new int[graphs.length][];
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             initialPartitions[graphId] = Util.ramp(graphs[graphId].getNodeCount());
@@ -29,7 +29,7 @@ abstract public class ParallelLouvain extends Louvain {
         return detect(graphs, initialPartitions, foldCount);
     }
 
-    public int[][] detect(Graph[] graphs, int[][] initialPartitions, int foldCount){
+    public int[][] detect(MultiGraph[] graphs, int[][] initialPartitions, int foldCount){
         int[][] partitions = new int[graphs.length][];
         // Serial execution
         if(threadCount <= 1){
@@ -37,7 +37,7 @@ abstract public class ParallelLouvain extends Louvain {
             Louvain detector = newDetector();
             for(int g = 0 ; g < graphs.length ; g++){
                 partitions[g] = initialPartitions[g];
-                if(graphs[g] == null || !graphs[g].hasEdge()) continue;
+                if(graphs[g] == null || graphs[g].isEmpty()) continue;
                 // run the detector
                 partitions[g] = detector.detect(graphs[g], initialPartitions[g], foldCount);
             }
@@ -55,7 +55,7 @@ abstract public class ParallelLouvain extends Louvain {
         // each worker roughly runs the same number of algorithms by using modulo %
         for(int g = 0 ; g < graphs.length ; g++){
             partitions[g] = initialPartitions[g]; // as the default answer if no detection is carried out
-            if(graphs[g] == null || !graphs[g].hasEdge()) continue; // no edge to detect
+            if(graphs[g] == null || graphs[g].isEmpty()) continue; // no edge to detect
             // set the graphId for detector to distinguish it when the partitions are detected
             Louvain detector = newDetector().init(graphs[g], initialPartitions[g], foldCount).setId(g);
             workers[g % threadCount].add(detector);

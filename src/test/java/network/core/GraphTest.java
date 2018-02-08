@@ -30,5 +30,7 @@ public class GraphTest {
         Assert.assertArrayEquals(new int[]{1, 2}, decomposed[0].getGraph(POS).getToRaw()[0]);
         // Check raw id of negative type (1) of second partition '1'
         Assert.assertArrayEquals(new int[]{1, 2, 3, 4}, decomposed[1].getGraph(NEG).getToRaw()[0]);
+        // MultiGraph to raw must match its most complete type-graph
+        Assert.assertArrayEquals(new int[]{1, 2, 3, 4}, decomposed[1].getToRaw()[0]);
     }
 }

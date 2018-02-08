@@ -16,6 +16,11 @@ public class MultiGraph extends Graph {
     private int nodeCount;
 
     /**
+     * Maximum node id
+     */
+    private int nodeMaxId;
+
+    /**
      * Sum of sub-graph edge counts
      */
 
@@ -24,13 +29,13 @@ public class MultiGraph extends Graph {
     /**
      * If at least one graph has an edge
      */
-    private boolean hasEdge;
+    private boolean isEmpty;
 
     public MultiGraph(){
         super();
         graphs =  new HashMap<>();
         nodeCount = 0;
-        hasEdge = false;
+        isEmpty = true;
     }
 
     /**
@@ -81,6 +86,9 @@ public class MultiGraph extends Graph {
                 multiGraphs[groupId].addGraph(typeId, typeSubGraphs[groupId]);
             }
         }
+        // Set attributes of multi-graph for decomposed multi-graphs
+        // Assumption: raw id of sub-multiGraphs points to the same ids as this multiGraph
+        setAttributesInto(multiGraphs);
         return multiGraphs;
     }
 
@@ -113,6 +121,8 @@ public class MultiGraph extends Graph {
             // Add transpose of each type graph to multiGraph
             foldedMultiGraph.addGraph(typeId, typeGraph.fold(partition));
         }
+        // Aggregate the attributes of multiGraph into folded multi-graph
+        foldedMultiGraph.setAttributes(aggregateAttributes(partition, foldedMultiGraph));
         return foldedMultiGraph;
     }
 
@@ -121,7 +131,15 @@ public class MultiGraph extends Graph {
         if(graph == null) return this;
         nodeCount = Math.max(graph.getNodeCount(), nodeCount);
         edgeCount += graph.getEdgeCount();
-        hasEdge = hasEdge || graph.hasEdge();
+        isEmpty = isEmpty && graph.isEmpty();
+        // Take the largest id map as the representative
+        int currentMapSize = getToRaw() == null ? 0 : getToRaw()[0].length;
+        int graphMapSize = graph.getToRaw() == null ? 0 : graph.getToRaw()[0].length;
+        if(currentMapSize < graphMapSize){
+            setToRaw(graph.getToRaw());
+            setToNormal(graph.getToNormal());
+            nodeMaxId = graphMapSize  - 1; // raw array supports maximum node id as input
+        }
         return this;
     }
 
@@ -129,13 +147,24 @@ public class MultiGraph extends Graph {
         return graphs.get(typeId);
     }
 
+    @Override
+    public MultiGraph clone() {
+        MultiGraph clone = (MultiGraph) super.clone();
+        clone.isEmpty = isEmpty;
+        clone.graphs = (HashMap<Integer, Graph>) graphs.clone();
+        clone.edgeCount = edgeCount;
+        clone.nodeCount = nodeCount;
+        clone.nodeMaxId = nodeMaxId;
+        return clone;
+    }
+
     /**
      * Return true if at least one sub-graph has edge
      * @return
      */
     @Override
-    public boolean hasEdge(){
-        return hasEdge;
+    public boolean isEmpty(){
+        return isEmpty;
     }
 
     @Override
@@ -146,6 +175,11 @@ public class MultiGraph extends Graph {
     @Override
     public int getEdgeCount() {
         return edgeCount;
+    }
+
+    @Override
+    public int getNodeMaxId() {
+        return nodeMaxId;
     }
 
     @Override

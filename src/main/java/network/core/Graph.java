@@ -1,6 +1,7 @@
 package network.core;
 
 import cern.colt.map.OpenIntIntHashMap;
+import cern.jet.math.Mult;
 
 import static network.core.ListMatrix.ROW;
 
@@ -38,15 +39,24 @@ public class Graph extends SparseMatrix {
         for(int pr = 0 ; pr < subGraphs.length; pr++) {
             subGraphs[pr] = (Graph) sparseMatrices[pr];
         }
-        // Copy node attributes to new partitions (if any)
-        for(int pr = 0 ; pr < subGraphs.length && hasAttributes(); pr++){
-            if(subGraphs[pr] == null){
-                continue;
-            }
-            Graph subGraph = subGraphs[pr];
-            int subNodeCount = subGraph.getRowCount();
+        // Copy node attributes to new partitions
+        setAttributesInto(subGraphs);
+        return subGraphs;
+    }
+
+    /**
+     * Clone the attributes of graph into given graphs
+     * based on shared normalized node ids between the graph and input graphs array
+     * @param graphs
+     */
+    public void setAttributesInto(Graph[] graphs){
+        if(!hasAttributes()) return;
+        for(int pr = 0 ; pr < graphs.length; pr++){
+            if(graphs[pr] == null) continue;
+            Graph graph = graphs[pr];
+            int subNodeCount = graph.getNodeCount();
             float[][] attributes = new float[subNodeCount][];
-            OpenIntIntHashMap toNormal = subGraph.getToNormal()[0];
+            OpenIntIntHashMap toNormal = graph.getToNormal()[0];
             for(int normalizedId = 0 ; normalizedId < subNodeCount ; normalizedId++){
                 /*
                     raw id of normalized nodeId of sub-graphs
@@ -54,14 +64,12 @@ public class Graph extends SparseMatrix {
                     so their raw id can be mapped back to nodeIds of this parent
                     using parent's maps
                  */
-                int rawId = subGraph.getToRaw()[0][normalizedId];
+                int rawId = graph.getToRaw()[0][normalizedId];
                 attributes[normalizedId] = getAttributes()[toNormal.get(rawId)].clone();
             }
-            subGraph.setAttributes(attributes);
+            graph.setAttributes(attributes);
         }
-        return subGraphs;
     }
-
     /**
      * Fold the graph based on the partition, aggregate node attributes
      * @param partition
@@ -74,22 +82,32 @@ public class Graph extends SparseMatrix {
             return folded; // no attributes to aggregate
         }
         // Aggregate the attributes of nodes into their superNode
-        int groupIdRange = folded.getMaxRowId() + 1;
+        folded.setAttributes(aggregateAttributes(partition, folded));
+        return folded;
+    }
+
+    /**
+     * Return aggregated attributes based on the partition and the folded graph
+     * @param partition
+     * @param foldedGraph
+     * @return
+     */
+    public float[][] aggregateAttributes(int[] partition, Graph foldedGraph){
+        if(!hasAttributes()) return null;
+        int groupIdRange = foldedGraph.getNodeMaxId() + 1;
         int attributeCount = this.attributes[0].length;
         float[][] attributes = new float[groupIdRange][attributeCount];
         // Aggregate attribute of nodes into their group node
         // Assumption: superNodes are normalized version of their groupIds in partition
-        OpenIntIntHashMap groupToSuperGroup = folded.getToNormal()[ROW];
+        OpenIntIntHashMap groupToSuperGroup = foldedGraph.getToNormal()[ROW];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
             int superGroupId = groupToSuperGroup.get(partition[nodeId]);
             for(int attr = 0 ; attr < attributeCount ; attr++){
                 attributes[superGroupId][attr] += this.attributes[nodeId][attr];
             }
         }
-        folded.setAttributes(attributes);
-        return folded;
+        return attributes;
     }
-
     /**
      * Returns the transition probability of going from "row" to "column"
      * @return

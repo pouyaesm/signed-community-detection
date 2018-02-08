@@ -3,6 +3,7 @@ package network.cli;
 import network.Shared;
 import network.core.Graph;
 import network.core.GraphIO;
+import network.core.SiGraph;
 import network.core.Statistics;
 import network.optimization.CPM;
 import network.optimization.CPMParameters;
@@ -43,7 +44,7 @@ public class Detection extends AbstractOperation {
 
             CPM cpmDetector = (CPM) new CPM().setThreadCount(threadCount);
             double time = System.currentTimeMillis();
-            Graph graph = GraphIO.readGraph(input, true);
+            SiGraph graph = new SiGraph(GraphIO.readGraph(input, true));
             int[] partition = cpmDetector.detect(graph, resolution, alpha, iteration);
             GraphIO.writePartition(graph, partition, output);
             double duration = (System.currentTimeMillis() - time) / 1000;

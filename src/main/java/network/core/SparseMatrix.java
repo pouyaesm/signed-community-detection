@@ -125,7 +125,7 @@ public class SparseMatrix extends ListMatrix {
      * @return
      */
     public float[] getValues(int rowId){
-        return sparseValues[rowId];
+        return rowId < sparseValues.length ? sparseValues[rowId] : null;
     }
 
     /**
@@ -142,7 +142,7 @@ public class SparseMatrix extends ListMatrix {
      * @return
      */
     public int[] getColumns(int rowId){
-        return columnIndices[rowId];
+        return rowId < columnIndices.length ? columnIndices[rowId] : null;
     }
 
     /**
@@ -156,6 +156,7 @@ public class SparseMatrix extends ListMatrix {
     @Override
     public SparseMatrix clone(){
         SparseMatrix clone = (SparseMatrix) super.clone();
+        if(sparseValues == null) return clone;
         clone.sparseValues = new float[sparseValues.length][];
         clone.columnIndices = new int[sparseValues.length][];
         for(int r = 0 ; r < sparseValues.length ; r++){

@@ -615,8 +615,8 @@ public class ListMatrix extends AbstractMatrix {
         }
         ListMatrix subList = newInstance().init(subRows, subColumns, subValues, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
-        subList.toNormal = getToNormal();
-        subList.toRaw = getToRaw();
+        subList.toNormal = getToNormal() == null ? null : getToNormal().clone();
+        subList.toRaw = getToRaw() == null ? null : getToRaw().clone();
         return subList;
     }
 
@@ -719,7 +719,7 @@ public class ListMatrix extends AbstractMatrix {
 
     @Override
     public ListMatrix clone(){
-        if(isEmpty()) return newInstance();
+        if(getRows() == null) return newInstance();
         int[] rows = getRows().clone();
         int[] columns = getColumns().clone();
         float[] values = getValues().clone();
@@ -778,6 +778,14 @@ public class ListMatrix extends AbstractMatrix {
 
     }
 
+    public void setToRaw(int[][] toRaw) {
+        this.toRaw = toRaw;
+    }
+
+    public void setToNormal(OpenIntIntHashMap[] toNormal) {
+        this.toNormal = toNormal;
+    }
+
     public ListMatrix setMaps(OpenIntIntHashMap[] toNormal, int[][] toRaw){
         this.toNormal = toNormal;
         this.toRaw = toRaw;
@@ -794,7 +802,7 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public boolean isEmpty(){
-        return  getRowCount() <= 0;
+        return  getRows() == null || getRowCount() <= 0;
     }
 
     public int[] getRows() {

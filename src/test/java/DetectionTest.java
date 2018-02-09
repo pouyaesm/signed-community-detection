@@ -1,7 +1,11 @@
 import network.core.Graph;
 import network.core.GraphIO;
+import network.core.ListMatrix;
 import network.core.SiGraph;
 import network.optimization.CPM;
+import network.optimization.CPMParameters;
+import network.optimization.CPMapParameters;
+import network.signedmapequation.SiMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,6 +18,21 @@ public class DetectionTest {
         int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 0);
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         Assert.assertArrayEquals(expectedPartition, partition);
+    }
+
+    @Test
+    public void testCPMEvaluation() {
+        int[] rows = {      0, 0, 1, 3, 3, 3, 3, 3, 4};
+        int[] columns = {   1, 2, 2, 0, 1, 2, 4, 5, 5};
+        float[] values = {  1, 1, 1, -1, 1, 1, 1, -1, 1};
+        int[] partition = { 0, 0, 0, 1, 1, 1}; // {0, 1, 2}, {3, 4, 5}
+        ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
+        SiGraph siGraph = new SiGraph(new Graph(listMatrix));
+        CPMParameters parameters = new CPMParameters();
+        parameters.resolution = 0.005;
+        parameters.alpha = 0.5;
+        double hamiltonian = new CPM().evaluate(siGraph, partition, parameters);
+        Assert.assertEquals(-3.955, hamiltonian, 0);
     }
 
     /**
@@ -30,12 +49,5 @@ public class DetectionTest {
         int[][] partitions = cpmDetector.detect(graphs, 0.05f, 0.5f, 0);
         Assert.assertArrayEquals(expectedPartition, partitions[0]);
         Assert.assertArrayEquals(expectedPartition, partitions[1]);
-    }
-
-    @Test
-    public void testCPMEvaulation() throws Exception {
-        Graph graph = GraphIO.readGraph("testCases/squareConflict.txt", true);
-        int[] partition = {0, 0, 1, 1};
-
     }
 }

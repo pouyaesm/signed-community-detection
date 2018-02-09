@@ -67,13 +67,13 @@ abstract public class Louvain implements Runnable{
         // Rebuild the network of communities:
         // Fold negative & positive sub-graphs separately according to partition
         MultiGraph foldedGraph = graph.fold(partition);
-        // At least 1% decrease in network size is expected
+        // At least 0.1% decrease in network size is expected
         double sizeRatio = (double) foldedGraph.getNodeCount() / graph.getNodeCount();
-        if(sizeRatio > 0.99 || foldedGraph.getNodeCount() <= 1){
+        if(sizeRatio > 0.999 || foldedGraph.getNodeCount() <= 1){
             return partition;
         }
         // Recursive detect optimization, partition the network of groups
-        int[] superPartition = detect(foldedGraph,
+        int[] foldedPartition = detect(foldedGraph,
                 Util.ramp(foldedGraph.getNodeCount()), foldCount - 1);
         /*
          * Node with groupId = g in the current level gets groupId = maps[g] after coarsening
@@ -82,10 +82,10 @@ abstract public class Louvain implements Runnable{
          */
         int[] superNodeToGroup = foldedGraph.getToRaw()[ROW];
         OpenIntIntHashMap superGroup = new OpenIntIntHashMap(foldedGraph.getNodeCount());
-        for(int superNodeId = 0 ; superNodeId < superPartition.length ; superNodeId++){
+        for(int superNodeId = 0 ; superNodeId < foldedPartition.length ; superNodeId++){
             // groupId of foldedGroup before being folded-normalized into a superNode
             int groupId = superNodeToGroup[superNodeId];
-            superGroup.put(groupId, superPartition[superNodeId]);
+            superGroup.put(groupId, foldedPartition[superNodeId]);
         }
         // Change group id of node x with the corresponding superGroup of group id
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){

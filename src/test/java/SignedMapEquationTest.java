@@ -51,18 +51,18 @@ public class SignedMapEquationTest {
         int[] partition = {0,   1,  1};
         float tau = 0.1f;
         statistics = Stationary.visitProbabilities(statistics, partition, tau);
-        Assert.assertArrayEquals(new double[]{0.3333, 0.3333, 0.3333}
+        Assert.assertArrayEquals(new double[]{0.2108, 0.3661, 0.4228}
         , statistics.nodeRecorded, 0.0001f);
-        Assert.assertArrayEquals(new double[]{0.1666, 0.3333, 0.5000}
+        Assert.assertArrayEquals(new double[]{0.1972, 0.3698, 0.4327}
                 , statistics.nodeUnRecorded, 0.0001f);
-        Assert.assertArrayEquals(new double[]{0.3222, 0.1722}
+        Assert.assertArrayEquals(new double[]{0.2038, 0.2038}
                 , statistics.groupRecorded, 0.0001f);
-        Assert.assertArrayEquals(new double[]{0.3333, 0.1666}
+        Assert.assertArrayEquals(new double[]{0.2108, 0.1972}
                 , statistics.groupUnRecorded, 0.0001f);
     }
 
     @Test
-    public void testEvaluation() throws Exception{
+    public void testSiMapEvaluationOnPaperGraph() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/infoMap.txt", true);
         int[] bestPartition = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3};
         CPMapParameters parameters = new CPMapParameters();
@@ -72,12 +72,28 @@ public class SignedMapEquationTest {
         parameters.TELEPORT_TO_NODE = false;
         parameters.TAU = 0.15f;
         double descriptionLength = SiMap.evaluate(graph, bestPartition, parameters);
-        Assert.assertEquals(2.9934, descriptionLength, 0.0001f);
+        Assert.assertEquals(3.2469, descriptionLength, 0.0001);
         // Node UnRecorded (naive-worst setting)
         parameters.USE_RECORDED = true;
         parameters.TELEPORT_TO_NODE = true;
-        parameters.TAU = 0.00001f; // in recorded setting, this value must be as small as possible
         descriptionLength = SiMap.evaluate(graph, bestPartition, parameters);
-        Assert.assertEquals(3.246, descriptionLength, 0.0001f);
+        Assert.assertEquals(3.7307, descriptionLength, 0.0001f);
+    }
+
+    @Test
+    public void testSiMapEvaluationOnSigned() {
+        int[] rows = {      0,  0,  1,  3,  3,  3,  3,  3,  3,  4,  5};
+        int[] columns = {   1,  2,  2,  0,  1,  2,  4,  5,  6,  6,  6};
+        float[] values = {  1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1};
+        // {0, 1, 2}, {3, 4, 5, 6}, the critical node is '3' bridging two partitions
+        int[] partition = { 0, 0, 0, 1, 1, 1, 1};
+        ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
+        Graph graph = new Graph(listMatrix);
+        CPMapParameters parameters = new CPMapParameters();
+        parameters.TAU = 0.1f;
+        parameters.USE_RECORDED = false;
+        parameters.TELEPORT_TO_NODE = false;
+        double minimumDescriptionLength = SiMap.evaluate(graph, partition, parameters);
+        Assert.assertEquals(2.8238, minimumDescriptionLength, 0.0001);
     }
 }

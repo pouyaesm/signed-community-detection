@@ -65,7 +65,7 @@ public class CPM extends RosvallBergstrom {
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         // groupNeighbor[ng] = q >= 0 means group ng is a neighbor of current group g
         // and it is placed in position q of queue
-        int[] neighborGroupQueueIndex = Util.intArray(groupIdRange, -1);
+        int[] neighborGroupQIndex = Util.intArray(groupIdRange, -1);
         // Number of nodes in each group (each node of a group may be a folded super-node)
         int[] nodeCount = new int[groupIdRange];
         float[][] nodeAttributes = graph.getAttributes();
@@ -133,21 +133,21 @@ public class CPM extends RosvallBergstrom {
                                 }
                             } else { // link toward neighbor groups
                                 // first time this neighbor is visited ?
-                                int neighborQueuePosition;
-                                if (neighborGroupQueueIndex[neighborGroupId] == -1) {
+                                int neighborQPosition;
+                                if (neighborGroupQIndex[neighborGroupId] == -1) {
                                     if (groupQueue[queueHead] == null) groupQueue[queueHead] = new double[5];
                                     groupQueue[queueHead][0] = neighborGroupId;
-                                    neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId] = queueHead;
+                                    neighborQPosition = neighborGroupQIndex[neighborGroupId] = queueHead;
                                     queueHead++;
                                 } else {
-                                    neighborQueuePosition = neighborGroupQueueIndex[neighborGroupId];
+                                    neighborQPosition = neighborGroupQIndex[neighborGroupId];
                                 }
                                 if (direction == outward) {  // from node to neighbor group
-                                    if (linkValue > 0) groupQueue[neighborQueuePosition][2] += linkValue;
-                                    else groupQueue[neighborQueuePosition][4] -= linkValue;
+                                    if (linkValue > 0) groupQueue[neighborQPosition][2] += linkValue;
+                                    else groupQueue[neighborQPosition][4] -= linkValue;
                                 } else { // neighbor group to node
-                                    if (linkValue > 0) groupQueue[neighborQueuePosition][1] += linkValue;
-                                    else groupQueue[neighborQueuePosition][3] -= linkValue;
+                                    if (linkValue > 0) groupQueue[neighborQPosition][1] += linkValue;
+                                    else groupQueue[neighborQPosition][3] -= linkValue;
                                 }
                             }
                             if (direction == outward) {
@@ -178,10 +178,10 @@ public class CPM extends RosvallBergstrom {
                 int bestNeighborGroupId = -1;
                 for(int queueIndex = 0 ; queueIndex < queueHead ; queueIndex++){
                     int neighborGroupId = (int) groupQueue[queueIndex][0];
-                    pPositive.KCp = groupQueue[queueIndex][2];
-                    pNegative.KCp = groupQueue[queueIndex][4];
                     pPositive.CpK = groupQueue[queueIndex][1];
+                    pPositive.KCp = groupQueue[queueIndex][2];
                     pNegative.CpK = groupQueue[queueIndex][3];
+                    pNegative.KCp = groupQueue[queueIndex][4];
                     // add node sub-node groupCount to neighbor group temporarily for local change calculation
                     pPositive.NCp = pNegative.NCp = nodeCount[neighborGroupId] + nodeSize;
                     double pChange = localChange(pPositive);
@@ -204,7 +204,7 @@ public class CPM extends RosvallBergstrom {
                 }
                 // Clear the data structures for tracking the neighbor groups of next node
                 for(int queueIndex = 0 ; queueIndex < queueHead ; queueIndex++){
-                    neighborGroupQueueIndex[(int) groupQueue[queueIndex][0]] = -1;
+                    neighborGroupQIndex[(int) groupQueue[queueIndex][0]] = -1;
                     for(int statisticsIndex = 0 ; statisticsIndex < 5 ; statisticsIndex++){
                         groupQueue[queueIndex][statisticsIndex] = 0;
                     }

@@ -14,7 +14,7 @@ public class Stationary {
      */
     public static SiMapStatistics visitProbabilities(SiMapStatistics statistics, int[] partition, float tau){
         statistics.nodeRecorded = nodeRecorded(statistics.transition
-                , statistics.teleport, statistics.negativeTeleport, tau, 0.000000000000001f);
+                , statistics.teleport, statistics.negativeTeleport, tau, 0.000000000000001);
         statistics.nodeUnRecorded = nodeUnRecorded(statistics.transition,
                 statistics.nodeRecorded, statistics.negativeTeleport);
         statistics.groupRecorded = group(statistics, partition, tau, true);
@@ -62,33 +62,35 @@ public class Stationary {
      */
     public static double[] nodeRecorded(Graph transitionMatrix, double[] teleport,
                                         double[] negativeTeleport, double tau, double minDistance){
-        int nodeCount = transitionMatrix.getNodeCount();
-        double[] Pt = Util.doubleArray(nodeCount, 1.0f / transitionMatrix.getNodeCount()); // distribution at t-th step
+        int nodeCount = teleport.length;
+        double[] Pt = Util.doubleArray(nodeCount, 1.0 / nodeCount); // distribution at t-th step
         double[] Pt_1 = Pt.clone(); // distribution at (t-1)-th step
         double[] multiply = new double[nodeCount]; // holds the multiplication Pt_1 * G
-        double distance = 0;
+        double distance = Integer.MAX_VALUE;
         while(distance > minDistance){
             double totalNegativeTeleport = 0;
             // Calculate sum(P(n) * Ptele(n)) (used in part of calculations)
             for(int nodeId = 0; nodeId < nodeCount ; nodeId++){
                 totalNegativeTeleport += Pt[nodeId] * negativeTeleport[nodeId];
             }
-            // Calculate P = P(t - 1) * G
+            // Reset multiply
+            for(int nodeId = 0 ; nodeId < nodeCount; nodeId++) multiply[nodeId] = 0;
+            // Calculate multiply = P(t - 1) * G
             float[][] transitions = transitionMatrix.getSparseValues();
             for(int nodeId = 0 ; nodeId < nodeCount; nodeId++){
                 int[] neighbors = transitionMatrix.getColumns(nodeId);
                 float[] transitionToNeighbor = transitions[nodeId];
-                double visitingNodeId = Pt[nodeId];
+                double visitingNode = Pt[nodeId];
                 for(int n = 0 ; n < neighbors.length ; n++){
-                    multiply[neighbors[n]] += visitingNodeId * transitionToNeighbor[n];
+                    multiply[neighbors[n]] += visitingNode * transitionToNeighbor[n];
                 }
             }
             // Update Pt to Pt+1, and calculate the distribution distance
             distance = 0;
             for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
                 Pt[nodeId] = tau * teleport[nodeId]
-                        + (1 - tau) * multiply[nodeId]
-                        + ((1 - tau) / nodeCount) * totalNegativeTeleport;
+                        + (1.0 - tau) * multiply[nodeId]
+                        + ((1.0 - tau) / nodeCount) * totalNegativeTeleport;
                 // distance of Pt to Pt_1
                 distance += Math.pow(Pt[nodeId] - Pt_1[nodeId], 2);
                 Pt_1[nodeId] = Pt[nodeId];

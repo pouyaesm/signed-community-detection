@@ -574,7 +574,7 @@ public class ListMatrix extends AbstractMatrix {
         while(keys.hasNext()){
             Map.Entry<Long, Float> entry = keys.next();
             long uniqueId = entry.getKey();
-            rows[insertAt] = (int)(uniqueId / groupCount);
+            rows[insertAt] = (int) Math.floor((double) uniqueId / groupCount);
             columns[insertAt] = (int)(uniqueId % groupCount);
             values[insertAt] = (float) pairs.get(uniqueId);
             insertAt++;
@@ -723,6 +723,8 @@ public class ListMatrix extends AbstractMatrix {
         float[] values = getValues().clone();
         ListMatrix listMatrix = newInstance().init(rows, columns, values, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
+        // Copy id normalize de-normalize maps
+        if(listMatrix.toRaw == null) return listMatrix;
         listMatrix.toRaw = new int[2][];
         listMatrix.toNormal = new OpenIntIntHashMap[2];
         for(int dim = 0 ; dim < 2 ; dim++){

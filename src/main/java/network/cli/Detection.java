@@ -39,12 +39,12 @@ public class Detection extends AbstractOperation {
             int iteration = Integer.parseInt(line.getOptionValue(ITERATION, ITERATION_DEFAULT));
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
             Shared.verbose = line.hasOption(OperationCenter.VERBOSE);
-
+            boolean isUndirected = line.hasOption(OperationCenter.UNDIRECTED);
             Shared.log("Resolution scale: " + resolution);
 
             CPM cpmDetector = (CPM) new CPM().setThreadCount(threadCount);
             double time = System.currentTimeMillis();
-            Graph graph = GraphIO.readGraph(input, true);
+            Graph graph = GraphIO.readGraph(input, isUndirected);
             SiGraph siGraph = new SiGraph(graph);
             int[] partition = cpmDetector.detect(siGraph, resolution, alpha, iteration);
             GraphIO.writePartition(siGraph, partition, output);
@@ -55,7 +55,7 @@ public class Detection extends AbstractOperation {
             CPMapParameters cpMapParameters = new CPMapParameters();
             cpMapParameters.USE_RECORDED = false;
             cpMapParameters.TELEPORT_TO_NODE = false;
-            cpMapParameters.TAU = 0.01f;
+            cpMapParameters.TAU = 0.15f;
             Shared.log("Minimum Description Length: " + SiMap.evaluate(graph, partition, cpMapParameters));
 
             CPMParameters cpmParameters = new CPMParameters();

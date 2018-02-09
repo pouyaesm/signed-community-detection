@@ -99,12 +99,15 @@ public class MultiGraph extends Graph {
     @Override
     public MultiGraph transpose(boolean clone){
         Iterator iterator = graphs.entrySet().iterator();
-        MultiGraph transposedMultiGraph = newInstance();
+        // For cloning, only keep the attributes
+        MultiGraph transposedMultiGraph = clone ?
+                (MultiGraph) newInstance().setAttributes(cloneAttributes()) : this;
         while (iterator.hasNext()){
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
             Graph typeGraph = (Graph) graphEntry.getValue();
             // Add transpose of each type graph to multiGraph
+            // If clone = false, each type replaces previous one
             transposedMultiGraph.addGraph(typeId, (Graph) typeGraph.transpose(clone));
         }
         return transposedMultiGraph;
@@ -127,8 +130,9 @@ public class MultiGraph extends Graph {
     }
 
     public MultiGraph addGraph(int typeId, Graph graph){
+        boolean reAdded = graphs.containsKey(typeId);
         graphs.put(typeId, graph);
-        if(graph == null) return this;
+        if(graph == null || reAdded) return this;
         nodeCount = Math.max(graph.getNodeCount(), nodeCount);
         edgeCount += graph.getEdgeCount();
         isEmpty = isEmpty && graph.isEmpty();

@@ -150,7 +150,8 @@ public class Util {
      * @return
      */
     public static OpenIntIntHashMap normalizeIds(int[]... ids) {
-        OpenIntIntHashMap toNormal = new OpenIntIntHashMap(ids[0].length);
+        int uniqueCount = Statistics.array(ids).uniqueCount;
+        OpenIntIntHashMap toNormal = new OpenIntIntHashMap(uniqueCount);
         int counter = 0;
         for (int[] id : ids) {
             for (int i = 0; i < id.length; i++) {

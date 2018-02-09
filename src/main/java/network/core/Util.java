@@ -1,5 +1,6 @@
 package network.core;
 
+import cern.colt.list.IntArrayList;
 import cern.colt.map.OpenIntIntHashMap;
 
 public class Util {
@@ -401,5 +402,25 @@ public class Util {
             partition[p] = p;
         }
         return partition;
+    }
+
+    /**
+     * Convert pairs (key, value) to array[key] = value
+     * @param hashMap
+     * @return
+     */
+    public static int[] toArray(OpenIntIntHashMap hashMap){
+        int maxKey = 0;
+        IntArrayList keys = hashMap.keys();
+        for(int i = 0 ; i < keys.size() ; i++){
+            int key = keys.get(i);
+            if(key > maxKey) maxKey = key;
+        }
+        int[] array = new int[maxKey + 1];
+        for(int i = 0 ; i < keys.size() ; i++){
+            int key = keys.get(i);
+            array[key] = hashMap.get(key);
+        }
+        return array;
     }
 }

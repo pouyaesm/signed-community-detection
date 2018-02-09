@@ -54,10 +54,10 @@ public class Graph extends SparseMatrix {
         for(int pr = 0 ; pr < graphs.length; pr++){
             if(graphs[pr] == null) continue;
             Graph graph = graphs[pr];
-            int subNodeCount = graph.getNodeCount();
-            float[][] attributes = new float[subNodeCount][];
+            int subNodeIdRange = graph.getNodeMaxId() + 1;
+            float[][] attributes = new float[subNodeIdRange][];
             OpenIntIntHashMap toNormal = graph.getToNormal()[0];
-            for(int normalizedId = 0 ; normalizedId < subNodeCount ; normalizedId++){
+            for(int normalizedId = 0 ; normalizedId < subNodeIdRange ; normalizedId++){
                 /*
                     raw id of normalized nodeId of sub-graphs
                     are mapped to the same rawId as their parent graph

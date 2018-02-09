@@ -1,5 +1,6 @@
 package network.optimization;
 
+import cern.colt.map.OpenIntIntHashMap;
 import network.core.*;
 
 import static network.core.ListMatrix.ROW;
@@ -80,15 +81,15 @@ abstract public class Louvain implements Runnable{
          * node 0 gets super-group 4, so node x is in group 4
          */
         int[] superNodeToGroup = foldedGraph.getToRaw()[ROW];
-        int[] superGroup = new int[Util.max(foldedGraph.getToRaw()[ROW]) + 1];
+        OpenIntIntHashMap superGroup = new OpenIntIntHashMap(foldedGraph.getNodeCount());
         for(int superNodeId = 0 ; superNodeId < superPartition.length ; superNodeId++){
             // groupId of foldedGroup before being folded-normalized into a superNode
             int groupId = superNodeToGroup[superNodeId];
-            superGroup[groupId] = superPartition[superNodeId];
+            superGroup.put(groupId, superPartition[superNodeId]);
         }
         // Change group id of node x with the corresponding superGroup of group id
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            partition[nodeId] = superGroup[partition[nodeId]];
+            partition[nodeId] = superGroup.get(partition[nodeId]);
         }
         return partition; // detected partition
     }

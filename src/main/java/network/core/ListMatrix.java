@@ -339,10 +339,9 @@ public class ListMatrix extends AbstractMatrix {
             }
         }
 
-
         // Return the value
         if(clone){
-            return newInstance().init(rows, columns, getValues().clone(), isIdShared())
+            return new ListMatrix().init(rows, columns, getValues().clone(), isIdShared())
                     .setMaps(toNormal, toRaw)
                     .setStatus(isSorted(), isUnique(), true, isIdAscending(), getSortMode());
         }else{
@@ -517,8 +516,7 @@ public class ListMatrix extends AbstractMatrix {
          */
         ListMatrix[] lists = new ListMatrix[groupCount];
         for(int pr = 0 ; pr < rows.length ; pr++){
-            lists[pr] = newInstance()
-                    .init(rows[pr], columns[pr], values[pr], isIdShared())
+            lists[pr] = new ListMatrix().init(rows[pr], columns[pr], values[pr], isIdShared())
                     .setStatus(isSorted(), isUnique(), false, isIdAscending(), getSortMode())
                     .setMaps(getToNormal(), getToRaw());
         }

@@ -44,9 +44,10 @@ public class Detection extends AbstractOperation {
 
             CPM cpmDetector = (CPM) new CPM().setThreadCount(threadCount);
             double time = System.currentTimeMillis();
-            SiGraph graph = new SiGraph(GraphIO.readGraph(input, true));
-            int[] partition = cpmDetector.detect(graph, resolution, alpha, iteration);
-            GraphIO.writePartition(graph, partition, output);
+            Graph graph = GraphIO.readGraph(input, true);
+            SiGraph siGraph = new SiGraph(graph);
+            int[] partition = cpmDetector.detect(siGraph, resolution, alpha, iteration);
+            GraphIO.writePartition(siGraph, partition, output);
             double duration = (System.currentTimeMillis() - time) / 1000;
             Shared.log("Finished in " + duration + " seconds");
             Shared.log("Number of communities: " + Statistics.array(partition).uniqueCount);
@@ -60,7 +61,7 @@ public class Detection extends AbstractOperation {
             CPMParameters cpmParameters = new CPMParameters();
             cpmParameters.resolution = resolution;
             cpMapParameters.alpha = alpha;
-            Shared.log("Hamiltonian: " + cpmDetector.evaluate(graph, partition, cpMapParameters));
+            Shared.log("Hamiltonian: " + cpmDetector.evaluate(siGraph, partition, cpMapParameters));
 
         } catch( ParseException exp ) {
             // oops, something went wrong

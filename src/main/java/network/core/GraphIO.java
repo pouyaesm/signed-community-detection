@@ -1,5 +1,6 @@
 package network.core;
 
+import cern.colt.map.OpenIntIntHashMap;
 import network.Shared;
 
 import java.io.BufferedWriter;

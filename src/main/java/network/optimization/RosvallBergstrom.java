@@ -62,28 +62,24 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         // Normalize the partition since decomposition assumes normalized partitions
         Util.normalizeValues(initialPartition);
         MultiGraph[] subGraphs = graph.decompose(initialPartition);
-        ArrayList<MultiGraph> largeGraphs = new ArrayList<>();
+        ArrayList<MultiGraph> parallelGraphs = new ArrayList<>();
         int[][] subPartitions = new int[subGraphs.length][];
         // Run louvain on subGraphs separated by initialPartition
         for (int graphId = 0; graphId < subGraphs.length; graphId++) {
             MultiGraph subGraph = subGraphs[graphId];
             int nodeCount = subGraph.getNodeCount();
-            int edgeCount = subGraph.getEdgeCount();
             if (nodeCount < 4) { // trivial all in on group
                 subPartitions[graphId] = Util.intArray(nodeCount, 0);
-            } else if (edgeCount < LARGE_SUB_GRAPH) { // Initially place each node in a separate group
-                subPartitions[graphId] = Util.ramp(nodeCount);
-                subPartitions[graphId] = newDetector().detect(subGraph, subPartitions[graphId], 1000000);
-            } else { // Add to list to be processed in batch along other large graphs (if any)
-                subGraph.setId(graphId); // to be recognized in an array
-                largeGraphs.add(subGraph);
+            } else {
+                subGraph.setId(graphId); // to be recognized later
+                parallelGraphs.add(subGraph);
             }
         }
         // Parallel batch detection of large graphs
-        if (largeGraphs.size() > 0) {
-            int[][] partitions = newDetector().detect(largeGraphs.toArray(new MultiGraph[0]), 1000000);
+        if (parallelGraphs.size() > 0) {
+            int[][] partitions = newDetector().detect(parallelGraphs.toArray(new MultiGraph[0]), 1000000);
             for (int largeId = 0; largeId < partitions.length; largeId++) {
-                int graphId = largeGraphs.get(largeId).getId();
+                int graphId = parallelGraphs.get(largeId).getId();
                 subPartitions[graphId] = partitions[largeId];
             }
         }

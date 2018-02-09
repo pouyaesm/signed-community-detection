@@ -1,9 +1,19 @@
 package network.signedmapequation;
 
+import network.Shared;
 import network.core.Graph;
 import network.core.Util;
 
 public class Stationary {
+
+    /**
+     * Number of threads used for multi-thread multiplication
+     */
+    private int threadCount;
+
+    public Stationary(int threadCount){
+        this.threadCount = threadCount;
+    }
 
     /**
      * Calculate visit probabilities of nodes and group of nodes, add the calculations to statistics
@@ -12,7 +22,7 @@ public class Stationary {
      * @param tau
      * @return
      */
-    public static SiMapStatistics visitProbabilities(SiMapStatistics statistics, int[] partition, float tau){
+    public SiMapStatistics visitProbabilities(SiMapStatistics statistics, int[] partition, float tau){
         statistics.nodeRecorded = nodeRecorded(statistics.transition
                 , statistics.teleport, statistics.negativeTeleport, tau, 0.000000000000001);
         statistics.nodeUnRecorded = nodeUnRecorded(statistics.transition,
@@ -29,7 +39,7 @@ public class Stationary {
      * @param negativeTeleport
      * @return
      */
-    public static double[] nodeUnRecorded(Graph transitionMatrix, double[] recorded,
+    public double[] nodeUnRecorded(Graph transitionMatrix, double[] recorded,
                                           double[] negativeTeleport){
         double[] unrecorded = new double[recorded.length]; // unRecorded node visit probability
         // Calculate P one step further without considering the teleportation
@@ -60,31 +70,22 @@ public class Stationary {
      * @param minDistance minimum distance of two consecutive distributions to stop
      * @return
      */
-    public static double[] nodeRecorded(Graph transitionMatrix, double[] teleport,
+    public double[] nodeRecorded(Graph transitionMatrix, double[] teleport,
                                         double[] negativeTeleport, double tau, double minDistance){
         int nodeCount = teleport.length;
         double[] Pt = Util.doubleArray(nodeCount, 1.0 / nodeCount); // distribution at t-th step
         double[] Pt_1 = Pt.clone(); // distribution at (t-1)-th step
-        double[] multiply = new double[nodeCount]; // holds the multiplication Pt_1 * G
         double distance = Integer.MAX_VALUE;
+        int counter = 0; // number of iterations till convergence
+        ParallelStationary multiplier = new ParallelStationary(threadCount);
         while(distance > minDistance){
             double totalNegativeTeleport = 0;
             // Calculate sum(P(n) * Ptele(n)) (used in part of calculations)
             for(int nodeId = 0; nodeId < nodeCount ; nodeId++){
                 totalNegativeTeleport += Pt[nodeId] * negativeTeleport[nodeId];
             }
-            // Reset multiply
-            for(int nodeId = 0 ; nodeId < nodeCount; nodeId++) multiply[nodeId] = 0;
-            // Calculate multiply = P(t - 1) * G
-            float[][] transitions = transitionMatrix.getSparseValues();
-            for(int nodeId = 0 ; nodeId < nodeCount; nodeId++){
-                int[] neighbors = transitionMatrix.getColumns(nodeId);
-                float[] transitionToNeighbor = transitions[nodeId];
-                double visitingNode = Pt[nodeId];
-                for(int n = 0 ; n < neighbors.length ; n++){
-                    multiply[neighbors[n]] += visitingNode * transitionToNeighbor[n];
-                }
-            }
+            // Multi-thread multiplication P(t - 1) * G
+            double[] multiply = multiplier.multiply(transitionMatrix, Pt);
             // Update Pt to Pt+1, and calculate the distribution distance
             distance = 0;
             for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
@@ -96,7 +97,9 @@ public class Stationary {
                 Pt_1[nodeId] = Pt[nodeId];
             }
             distance = Math.sqrt(distance);
+            counter++;
         } // while convergence
+        Shared.log(counter + " iterations for calculating stationary distribution");
         return Pt;
     }
 
@@ -109,7 +112,7 @@ public class Stationary {
      * @param useRecorded
      * @return
      */
-    public static double[] group(SiMapStatistics statistics, int[] partition, double tau, boolean useRecorded){
+    public double[] group(SiMapStatistics statistics, int[] partition, double tau, boolean useRecorded){
         int nodeCount = statistics.transition.getNodeCount();
         int groupIdRange = Util.max(partition) + 1;
         // probability of exiting or entering groupId

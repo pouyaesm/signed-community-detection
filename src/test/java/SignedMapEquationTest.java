@@ -1,7 +1,9 @@
 import network.core.Graph;
 import network.core.GraphIO;
 import network.core.ListMatrix;
+import network.core.SparseMatrix;
 import network.optimization.CPMapParameters;
+import network.signedmapequation.ParallelStationary;
 import network.signedmapequation.SiMap;
 import network.signedmapequation.SiMapStatistics;
 import network.signedmapequation.Stationary;
@@ -50,7 +52,7 @@ public class SignedMapEquationTest {
         statistics.teleport = new double[]{0.3333, 0.3333, 0.3333};
         int[] partition = {0,   1,  1};
         float tau = 0.1f;
-        statistics = Stationary.visitProbabilities(statistics, partition, tau);
+        statistics = new Stationary(2).visitProbabilities(statistics, partition, tau);
         Assert.assertArrayEquals(new double[]{0.2108, 0.3661, 0.4228}
         , statistics.nodeRecorded, 0.0001f);
         Assert.assertArrayEquals(new double[]{0.1972, 0.3698, 0.4327}
@@ -65,12 +67,9 @@ public class SignedMapEquationTest {
     public void testSiMapEvaluationOnPaperGraph() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/infoMap.txt", true);
         int[] bestPartition = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3};
-        CPMapParameters parameters = new CPMapParameters();
-
         // Link Recorded (best recommended setting)
-        parameters.USE_RECORDED = false;
-        parameters.TELEPORT_TO_NODE = false;
-        parameters.TAU = 0.15f;
+        CPMapParameters parameters = new CPMapParameters(
+                0.15f, false, false, 1);
         double descriptionLength = SiMap.evaluate(graph, bestPartition, parameters);
         Assert.assertEquals(3.2469, descriptionLength, 0.0001);
         // Node UnRecorded (naive-worst setting)
@@ -89,11 +88,23 @@ public class SignedMapEquationTest {
         int[] partition = { 0, 0, 0, 2, 2, 2, 2};
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
         Graph graph = new Graph(listMatrix);
-        CPMapParameters parameters = new CPMapParameters();
-        parameters.TAU = 0.1f;
-        parameters.USE_RECORDED = false;
-        parameters.TELEPORT_TO_NODE = false;
+        CPMapParameters parameters = new CPMapParameters(
+                0.1f, false, false, 1);
         double minimumDescriptionLength = SiMap.evaluate(graph, partition, parameters);
         Assert.assertEquals(2.8238, minimumDescriptionLength, 0.0001);
+    }
+
+    @Test
+    public void testParallelStationaryCalculation(){
+        int[] rows = {          0,   0,   0,   1,   1,   2};
+        int[] columns = {       0,   1,   2,   0,   1,   2};
+        float[] transit = {  .25f, .5f,.25f, .5f, .5f,   1};
+        double[] dist = { .3333, .3333, .3333}; // initial distribution for multiplication
+        SparseMatrix transitionMatrix = new SparseMatrix(
+                new ListMatrix().init(rows, columns, transit, true));
+        ParallelStationary parallel = new ParallelStationary(2);
+        double[] nextDist = parallel.multiply(transitionMatrix, dist);
+        double[] expectedDist = {0.25, .3333, .4166};
+        Assert.assertArrayEquals(expectedDist, nextDist, 0.0001);
     }
 }

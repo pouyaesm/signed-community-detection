@@ -320,13 +320,14 @@ public class Util {
      * Element wise sum of two arrays
      * @param array1
      * @param array2
+     * @param useFirstAsResult use the first input as the result thus do not create new third array
      * @return
      */
-    public static double[] sum(double[] array1, double[] array2){
+    public static double[] sum(double[] array1, double[] array2, boolean useFirstAsResult){
         if(array1.length != array2.length){
             return null;
         }
-        double[] values = new double[array1.length];
+        double[] values = useFirstAsResult ? array1 : new double[array1.length];
         for(int i = 0 ; i < array1.length ; i++){
             values[i] = array1[i] + array2[i];
         }

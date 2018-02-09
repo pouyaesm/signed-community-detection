@@ -71,7 +71,6 @@ abstract public class ParallelLouvain extends Louvain {
             workers[load.getKey()].add(detector);
             threadLoad.add(load.add(graphs[g].getEdgeCount())); // add the edge to load
         }
-        int a = 1;
         // Run workers
 //        Shared.log("Run parallel detection");
         for(Thread thread : threads){

@@ -38,7 +38,9 @@ public class SiMap {
                 }
             }
         }
-        statistics = Stationary.visitProbabilities(statistics, partition, cpMapParameters.TAU);
+        int threadCount = ((CPMapParameters) parameters).threadCount;
+        statistics = new Stationary(threadCount)
+                .visitProbabilities(statistics, partition, cpMapParameters.TAU);
         // Calculate the description length of random step
         // based visiting probabilities of nodes and groups
         double descriptionLength;
@@ -63,7 +65,7 @@ public class SiMap {
             double[] pNode, double[] pGroup, int[] partition){
         // Aggregate node visit probabilities based on their group ids
         double[] pSum = Util.aggregate(pNode, partition);
-        double[] pTotal = Util.sum(pGroup, pSum);
+        double[] pTotal = Util.sum(pGroup, pSum, false);
         double groupSum = Util.sum(pGroup);
         // Avoid log(0) by replacing 0's with 1's resulting in log(1) = 0
         if(groupSum == 0.0) groupSum = 1; // e.g. when there is no links and no teleportation

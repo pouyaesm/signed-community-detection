@@ -19,6 +19,15 @@ public class Graph extends SparseMatrix {
         super(listMatrix);
     }
 
+    public Graph(SparseMatrix sparseMatrix){
+        super(sparseMatrix);
+    }
+
+    public Graph(Graph graph){
+        super(graph);
+        this.attributes = graph.getAttributes();
+    }
+
     @Override
     public Graph[] decompose(int[] partition){
         return decompose(partition, null);
@@ -37,7 +46,7 @@ public class Graph extends SparseMatrix {
         Graph[] subGraphs = new Graph[sparseMatrices.length];
         // Convert array types
         for(int pr = 0 ; pr < subGraphs.length; pr++) {
-            subGraphs[pr] = (Graph) sparseMatrices[pr];
+            subGraphs[pr] = new Graph(sparseMatrices[pr]);
         }
         // Copy node attributes to new partitions
         setAttributesInto(subGraphs);
@@ -77,7 +86,7 @@ public class Graph extends SparseMatrix {
      */
     @Override
     public Graph fold(int[] partition){
-        Graph folded = (Graph) super.fold(partition);
+        Graph folded = new Graph(super.fold(partition));
         if (attributes == null) {
             return folded; // no attributes to aggregate
         }
@@ -146,7 +155,7 @@ public class Graph extends SparseMatrix {
      * @return
      */
     public Graph filter(float lowerBound, float upperBound){
-        Graph graph = (Graph) super.filter(lowerBound, upperBound);
+        Graph graph = new Graph(super.filter(lowerBound, upperBound));
         graph.setAttributes(cloneAttributes());
         return graph;
     }
@@ -199,22 +208,10 @@ public class Graph extends SparseMatrix {
         return attributes != null;
     }
 
-    /**
-     * Does graph have edge?
-     * @return
-     */
-    public boolean hasEdge(){
-        return !isEmpty();// Each member of the list matrix is an edge
-    }
-
-    @Override
-    public Graph newInstance() {
-        return new Graph();
-    }
 
     @Override
     public Graph clone() {
-        Graph graph = (Graph) super.clone();
+        Graph graph = new Graph(super.clone());
         graph.setAttributes(cloneAttributes());
         return graph;
     }

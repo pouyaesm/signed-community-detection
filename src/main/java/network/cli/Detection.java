@@ -48,6 +48,7 @@ public class Detection extends AbstractOperation {
             SiGraph siGraph = new SiGraph(graph);
             int[] partition = cpmDetector.detect(siGraph, resolution, alpha, iteration);
             GraphIO.writePartition(siGraph, partition, output);
+            GraphIO.writeListMatrix(graph, output + "_graph");
             double duration = (System.currentTimeMillis() - time) / 1000;
             Shared.log("Finished in " + duration + " seconds");
             Shared.log("Number of communities: " + Statistics.array(partition).uniqueCount);
@@ -55,7 +56,7 @@ public class Detection extends AbstractOperation {
             CPMapParameters cpMapParameters = new CPMapParameters();
             cpMapParameters.USE_RECORDED = false;
             cpMapParameters.TELEPORT_TO_NODE = false;
-            cpMapParameters.TAU = 0.15f;
+            cpMapParameters.TAU = 0.1f;
             Shared.log("Minimum Description Length: " + SiMap.evaluate(graph, partition, cpMapParameters));
 
             CPMParameters cpmParameters = new CPMParameters();

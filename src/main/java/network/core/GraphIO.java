@@ -19,7 +19,7 @@ public class GraphIO {
         ListMatrix listMatrix = readListMatrix(address, symmetric);
         // Normalizing without sorting causes [3, 1, 2] to be mapped to [0, 1, 2]
         // But after sorting: [1, 2, 3] -> [0, 1, 2] easier to track and test
-        return (Graph) new Graph().init(listMatrix.sort().normalize());
+        return (Graph) new Graph(listMatrix.sort().normalize());
     }
 
     /**

@@ -11,7 +11,7 @@ public class ConnectedComponentsTest {
         int[] rows = {      1, 1, 2, 4, 6};
         int[] columns = {   2, 3, 3, 5, 6};
         float[] values = {  1, 1, 1, 1, 1};
-        Graph graph = (Graph) new Graph().init(
+        Graph graph = new Graph(
                 new ListMatrix().init(rows, columns, values, true).symmetrize().normalize()
         );
         ConnectedComponents connectedComponents = new ConnectedComponents(graph).find();

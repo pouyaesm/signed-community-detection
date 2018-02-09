@@ -1,6 +1,7 @@
 package network.core;
 
 import cern.colt.map.OpenIntIntHashMap;
+import cern.jet.math.Mult;
 
 import java.util.*;
 
@@ -33,9 +34,28 @@ public class MultiGraph extends Graph {
 
     public MultiGraph(){
         super();
+        init();
+    }
+
+    public MultiGraph(Graph graph){
+        super(graph);
+        init();
+    }
+
+    public MultiGraph(MultiGraph graph){
+        super(graph);
+        graphs = graph.graphs;
+        isEmpty = graph.isEmpty;
+        nodeMaxId = graph.nodeMaxId;
+        nodeCount = graph.nodeCount;
+        edgeCount = graph.edgeCount;
+    }
+
+    public MultiGraph init(){
         graphs =  new HashMap<>();
-        nodeCount = 0;
         isEmpty = true;
+        nodeMaxId = -1;
+        return this;
     }
 
     /**
@@ -74,7 +94,7 @@ public class MultiGraph extends Graph {
         // Put all types of each group into one multi-graph
         MultiGraph[] multiGraphs = new MultiGraph[groupCount];
         for(int m = 0 ; m < multiGraphs.length ; m++){
-            multiGraphs[m] = newInstance();
+            multiGraphs[m] = new MultiGraph();
         }
         iterator = subGraphs.entrySet().iterator();
         while (iterator.hasNext()){
@@ -101,14 +121,14 @@ public class MultiGraph extends Graph {
         Iterator iterator = graphs.entrySet().iterator();
         // For cloning, only keep the attributes
         MultiGraph transposedMultiGraph = clone ?
-                (MultiGraph) newInstance().setAttributes(cloneAttributes()) : this;
+                (MultiGraph) new MultiGraph().setAttributes(cloneAttributes()) : this;
         while (iterator.hasNext()){
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
             Graph typeGraph = (Graph) graphEntry.getValue();
             // Add transpose of each type graph to multiGraph
             // If clone = false, each type replaces previous one
-            transposedMultiGraph.addGraph(typeId, (Graph) typeGraph.transpose(clone));
+            transposedMultiGraph.addGraph(typeId, new Graph(typeGraph.transpose(clone)));
         }
         return transposedMultiGraph;
     }
@@ -116,7 +136,7 @@ public class MultiGraph extends Graph {
     @Override
     public MultiGraph fold(int[] partition) {
         Iterator iterator = graphs.entrySet().iterator();
-        MultiGraph foldedMultiGraph = newInstance();
+        MultiGraph foldedMultiGraph = new MultiGraph();
         while (iterator.hasNext()){
             Map.Entry graphEntry = (Map.Entry) iterator.next();
             int typeId = (int) graphEntry.getKey();
@@ -153,9 +173,10 @@ public class MultiGraph extends Graph {
 
     @Override
     public MultiGraph clone() {
-        MultiGraph clone = (MultiGraph) super.clone();
-        clone.isEmpty = isEmpty;
+        MultiGraph clone = new MultiGraph(super.clone());
         clone.graphs = (HashMap<Integer, Graph>) graphs.clone();
+
+        clone.isEmpty = isEmpty;
         clone.edgeCount = edgeCount;
         clone.nodeCount = nodeCount;
         clone.nodeMaxId = nodeMaxId;
@@ -184,10 +205,5 @@ public class MultiGraph extends Graph {
     @Override
     public int getNodeMaxId() {
         return nodeMaxId;
-    }
-
-    @Override
-    public MultiGraph newInstance() {
-        return new MultiGraph();
     }
 }

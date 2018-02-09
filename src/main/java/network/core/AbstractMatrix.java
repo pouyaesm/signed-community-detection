@@ -9,8 +9,6 @@ abstract public class AbstractMatrix {
     private int id;
 
     abstract public AbstractMatrix transpose(boolean clone);
-    abstract public AbstractMatrix newInstance();
-    abstract public void onMatrixBuilt(); // called when data structure is built
     public AbstractMatrix[] decompose(int[] partition){
         return null;
     }

@@ -44,7 +44,7 @@ public class SignedMapEquationTest {
         int[] columns = {       2,      3,      1,      3,      1,      2};
         float[] transitions = { 0.25f,  0.75f,   0.25f,  0.75f,  0.25f,  0.75f};
         SiMapStatistics statistics = new SiMapStatistics();
-        statistics.transition = (Graph) new Graph().init(
+        statistics.transition = new Graph(
                 new ListMatrix().init(rows, columns, transitions, true).normalize());
         statistics.negativeTeleport = new double[]{0, 0, 0};
         statistics.teleport = new double[]{0.3333, 0.3333, 0.3333};

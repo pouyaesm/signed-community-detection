@@ -43,7 +43,7 @@ public class DetectionTest {
     public void testParallelLouvain() throws Exception {
         SiGraph[] graphs = new SiGraph[2];
         graphs[0] = new SiGraph(GraphIO.readGraph("testCases/3triads.txt", true));
-        graphs[1] = (SiGraph) graphs[0].clone();
+        graphs[1] = graphs[0].clone();
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         CPM cpmDetector = (CPM) new CPM().setThreadCount(2);
         int[][] partitions = cpmDetector.detect(graphs, 0.05f, 0.5f, 0);

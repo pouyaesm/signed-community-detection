@@ -24,6 +24,13 @@ public class SparseMatrix extends ListMatrix {
 
     public SparseMatrix(ListMatrix listMatrix){
         super(listMatrix);
+        buildSparse();
+    }
+
+    public SparseMatrix(SparseMatrix sparseMatrix){
+        super(sparseMatrix);
+        this.sparseValues = sparseMatrix.sparseValues;
+        this.columnIndices = sparseMatrix.columnIndices;
     }
 
 
@@ -33,9 +40,7 @@ public class SparseMatrix extends ListMatrix {
      * Assumption: there must be no duplicate (row, column) in the inputs
      * @return
      */
-    @Override
-    public void onMatrixBuilt() {
-        super.onMatrixBuilt();
+    private void buildSparse() {
         if(getRows() == null) return;
         // Populate the sparse data structure with list data
         int[] rows = getRows();
@@ -98,8 +103,9 @@ public class SparseMatrix extends ListMatrix {
         SparseMatrix[] matrices = new SparseMatrix[decomposed.length];
         for(int m = 0 ; m < decomposed.length ; m++){
             if(decomposed[m] == null) continue;
-            matrices[m] = (SparseMatrix) newInstance()
-                    .init(decomposed[m].normalizeKeepRawIds(mapToNormal, false));
+            matrices[m] = new SparseMatrix(
+                    decomposed[m].normalizeKeepRawIds(mapToNormal, false)
+            );
         }
         return matrices;
     }
@@ -117,6 +123,15 @@ public class SparseMatrix extends ListMatrix {
             }
         }
         return matrix;
+    }
+
+
+    @Override
+    public SparseMatrix clone(){
+        SparseMatrix clone = (SparseMatrix) new SparseMatrix().init(super.clone());
+        clone.sparseValues = sparseValues;
+        clone.columnIndices = columnIndices;
+        return clone;
     }
 
     /**
@@ -151,27 +166,5 @@ public class SparseMatrix extends ListMatrix {
      */
     public int[][] getSparseColumns(){
         return columnIndices;
-    }
-
-    @Override
-    public SparseMatrix clone(){
-        SparseMatrix clone = (SparseMatrix) super.clone();
-        if(sparseValues == null) return clone;
-        clone.sparseValues = new float[sparseValues.length][];
-        clone.columnIndices = new int[sparseValues.length][];
-        for(int r = 0 ; r < sparseValues.length ; r++){
-            clone.sparseValues[r] = sparseValues[r].clone();
-            clone.columnIndices[r] = columnIndices[r].clone();
-        }
-        return clone;
-    }
-
-    /**
-     * This is implemented by subclasses for instantiations
-     * @return
-     */
-    @Override
-    public SparseMatrix newInstance(){
-        return new SparseMatrix();
     }
 }

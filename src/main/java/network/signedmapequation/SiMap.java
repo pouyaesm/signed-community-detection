@@ -214,7 +214,7 @@ public class SiMap {
         statistics.negativeTeleport = negativeTeleport;
         statistics.inWeight = inWeight;
         statistics.outWeight = outWeight;
-        statistics.transition = (Graph) new Graph().init(transitionList);
+        statistics.transition = new Graph(transitionList);
         return statistics;
     }
 

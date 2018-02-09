@@ -98,16 +98,31 @@ public class ListMatrix extends AbstractMatrix {
         setValues(values);
         this.isIdShared = isIdShared;
         calculateStatistics(isIdShared); // calculate number of unique row and column ids
-        onMatrixBuilt(); // to let extended classes build their data structures on top
         return this;
     }
 
     public ListMatrix init(ListMatrix list){
-        setMaps(list.getToNormal(), list.getToRaw());
-        setStatus(list.isSorted(), list.isUnique(), list.isNormalized(),
-                list.isIdAscending(), list.getSortMode());
-        return init(list.getRows(),
-                list.getColumns(), list.getValues(), list.isIdShared());
+        this.rows = list.rows;
+        this.columns = list.columns;
+        this.values = list.values;
+        this.toNormal = list.toNormal;
+        this.toRaw = list.toRaw;
+
+        this.minRowId = list.minRowId;
+        this.minColumnId = list.minColumnId;
+        this.maxRowId = list.maxRowId;
+        this.maxColumnId = list.maxColumnId;
+
+        this.rowCount = list.rowCount;
+        this.columnCount = list.columnCount;
+
+        this.isIdShared = list.isIdShared;
+        this.isNormalized = list.isNormalized;
+        this.isIdAscending = list.isIdAscending;
+        this.isSorted = list.isSorted;
+        this.isUnique = list.isUnique;
+        this.sortMode = list.sortMode;
+        return this;
     }
     /**
      * @param rowColumns rowColumns[p] = [row, column]
@@ -227,7 +242,7 @@ public class ListMatrix extends AbstractMatrix {
 
         if(isUnique || (sortMode & MODE_REMOVE_DUPLICATE) == 0){
             if(clone){
-                ListMatrix listMatrix = newInstance().init(rows, columns, values, isIdShared())
+                ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
                         .setStatus(true, isUnique, isNormalized(), isIdAscending, sortMode);
                 return listMatrix;
             }else{
@@ -256,7 +271,7 @@ public class ListMatrix extends AbstractMatrix {
             uValues[uniqueIndex] = values[p];
             uniqueIndex++;
         }
-        ListMatrix listMatrix = newInstance().init(uRows, uColumns, uValues, isIdShared())
+        ListMatrix listMatrix = new ListMatrix().init(uRows, uColumns, uValues, isIdShared())
                 .setStatus(true, true, isNormalized(), isIdAscending(), getSortMode());
         return listMatrix;
     }
@@ -415,7 +430,7 @@ public class ListMatrix extends AbstractMatrix {
             uRows[p] = toRaw[ROW][rows[p]];
             uColumns[p] = toRaw[COL][columns[p]];
         }
-        ListMatrix unNormalizedList = clone ? newInstance() : this;
+        ListMatrix unNormalizedList = clone ? new ListMatrix() : this;
         if(clone){
             unNormalizedList.init(uRows, uColumns, getValues().clone(), isIdShared());
         }else{
@@ -441,7 +456,7 @@ public class ListMatrix extends AbstractMatrix {
                 tRows[p] = columns[p];
                 tColumns[p] = rows[p];
             }
-            transposedList = newInstance()
+            transposedList = new ListMatrix(this)
                     .init(tRows, tColumns, getValues().clone(), isIdShared());
         }else{
             transposedList = this;
@@ -462,7 +477,7 @@ public class ListMatrix extends AbstractMatrix {
             transposedList.toRaw[ROW] = getToRaw()[COL];
             transposedList.toRaw[COL] = toRawRowTemp;
         }
-        transposedList.setStatus(false, isUnique(), isNormalized(), isIdAscending(), getSortMode());
+        transposedList.isSorted = false; // other status are the same as this object
         return transposedList;
     }
 
@@ -579,7 +594,7 @@ public class ListMatrix extends AbstractMatrix {
             values[insertAt] = (float) pairs.get(uniqueId);
             insertAt++;
         }
-        ListMatrix foldedMatrix = newInstance().init(rows, columns, values, isIdShared())
+        ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())
                 .setMaps(toNormal, toRaw)
                 .setStatus(false, true, true, isIdAscending(), MODE_NOT_CLONE);
         return foldedMatrix;
@@ -611,7 +626,7 @@ public class ListMatrix extends AbstractMatrix {
                 insertAt++;
             }
         }
-        ListMatrix subList = newInstance().init(subRows, subColumns, subValues, isIdShared())
+        ListMatrix subList = new ListMatrix().init(subRows, subColumns, subValues, isIdShared())
                 .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
         subList.toNormal = getToNormal() == null ? null : getToNormal().clone();
         subList.toRaw = getToRaw() == null ? null : getToRaw().clone();
@@ -677,7 +692,8 @@ public class ListMatrix extends AbstractMatrix {
             }
         }
         // This operation breaks id sort but guarantees uniqueness of cells, and ids are not changed
-        ListMatrix symmetric = newInstance().init(symRows, symColumns, symValues, isIdShared())
+        ListMatrix symmetric = new ListMatrix()
+                .init(symRows, symColumns, symValues, isIdShared())
                 .setStatus(false, true, isNormalized(), false, getSortMode())
                 .setMaps(getToNormal(), getToRaw());
         return symmetric;
@@ -715,25 +731,6 @@ public class ListMatrix extends AbstractMatrix {
         return transpose(false);
     }
 
-    @Override
-    public ListMatrix clone(){
-        if(getRows() == null) return newInstance();
-        int[] rows = getRows().clone();
-        int[] columns = getColumns().clone();
-        float[] values = getValues().clone();
-        ListMatrix listMatrix = newInstance().init(rows, columns, values, isIdShared())
-                .setStatus(isSorted(), isUnique(), isNormalized(), isIdAscending(), getSortMode());
-        // Copy id normalize de-normalize maps
-        if(listMatrix.toRaw == null) return listMatrix;
-        listMatrix.toRaw = new int[2][];
-        listMatrix.toNormal = new OpenIntIntHashMap[2];
-        for(int dim = 0 ; dim < 2 ; dim++){
-            listMatrix.toRaw[dim] = toRaw[dim].clone();
-            listMatrix.toNormal[dim] = toNormal[dim];
-        }
-        return listMatrix;
-    }
-
     /**
      * Calculate and set the unique number of row and column ids
      */
@@ -756,6 +753,25 @@ public class ListMatrix extends AbstractMatrix {
     }
 
     @Override
+    public ListMatrix clone(){
+        ListMatrix listMatrix = new ListMatrix(this);
+        if(getRows() == null) return listMatrix;
+        // Deep copy of data
+        listMatrix.rows = getRows().clone();
+        listMatrix.columns = getColumns().clone();
+        listMatrix.values = getValues().clone();
+        // Deep copy id normalize de-normalize maps
+        if(listMatrix.toRaw == null) return listMatrix;
+        listMatrix.toRaw = new int[2][];
+        listMatrix.toNormal = new OpenIntIntHashMap[2];
+        for(int dim = 0 ; dim < 2 ; dim++){
+            listMatrix.toRaw[dim] = toRaw[dim].clone();
+            listMatrix.toNormal[dim] = (OpenIntIntHashMap) toNormal[dim].clone();
+        }
+        return listMatrix;
+    }
+
+    @Override
     public String toString() {
         StringBuilder string = new StringBuilder("[");
         for(int p = 0; p < rows.length ; p++){
@@ -768,15 +784,6 @@ public class ListMatrix extends AbstractMatrix {
         return string.toString();
     }
 
-    @Override
-    public ListMatrix newInstance() {
-        return new ListMatrix();
-    }
-
-    @Override
-    public void onMatrixBuilt() {
-
-    }
 
     public void setToRaw(int[][] toRaw) {
         this.toRaw = toRaw;

@@ -9,6 +9,10 @@ public class SiGraph extends MultiGraph {
 
     }
 
+    public SiGraph(MultiGraph multiGraph){
+        super(multiGraph);
+    }
+
     public SiGraph(Graph graph){
         Graph positive = graph.filter(0, Integer.MAX_VALUE);
         Graph negative  = graph.filter(Integer.MIN_VALUE, 0);
@@ -17,7 +21,7 @@ public class SiGraph extends MultiGraph {
     }
 
     @Override
-    public SiGraph newInstance() {
-        return new SiGraph();
+    public SiGraph clone() {
+        return new SiGraph(super.clone());
     }
 }

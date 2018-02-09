@@ -223,15 +223,16 @@ public class Util {
     }
 
     /**
-     * Replace a given value with another value
+     * Replace values in [find - delta, find + delta] with the replace value
      * @param values
      * @param find
      * @param replace
+     * @param delta
      * @return
      */
-    public static void replace(double[] values, double find, double replace){
+    public static void replace(double[] values, double find, double replace, double delta){
         for(int v = 0 ; v < values.length ; v++){
-            if(values[v] == find){
+            if(values[v] >= find - delta && values[v] <= find + delta){
                 values[v] = replace;
             }
         }

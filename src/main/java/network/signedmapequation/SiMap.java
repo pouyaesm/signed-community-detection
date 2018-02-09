@@ -67,9 +67,10 @@ public class SiMap {
         double groupSum = Util.sum(pGroup);
         // Avoid log(0) by replacing 0's with 1's resulting in log(1) = 0
         if(groupSum == 0.0) groupSum = 1; // e.g. when there is no links and no teleportation
-        Util.replace(pGroup, 0, 1);
-        Util.replace(pTotal, 0, 1);
-        Util.replace(pNode, 0, 1);
+        double distanceToZero = 0.00000000001; // 1 to 100 billion
+        Util.replace(pGroup, 0, 1, distanceToZero);
+        Util.replace(pTotal, 0, 1, distanceToZero);
+        Util.replace(pNode, 0, 1, distanceToZero);
         // Description Length
         double descriptionLength =
                 groupSum * Util.log2(groupSum)
@@ -209,8 +210,7 @@ public class SiMap {
         }
         // remove zero weights from the re-weighted matrix (all negative and some positive weights)
         ListMatrix transitionList = new ListMatrix()
-                .init(reWeights, transition.getSparseColumns(), true, false)
-                .normalize();
+                .init(reWeights, transition.getSparseColumns(), true, graph.isNormalized());
         statistics.negativeTeleport = negativeTeleport;
         statistics.inWeight = inWeight;
         statistics.outWeight = outWeight;

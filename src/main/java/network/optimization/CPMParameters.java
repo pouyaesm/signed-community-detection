@@ -14,4 +14,13 @@ public class CPMParameters extends ObjectiveParameters {
     public double Kin; // weight toward node set K
     public double Kout; // weight from node set K
     public double Kself; // self-loop weigh of node set K
+
+    public CPMParameters(){
+
+    }
+
+    public CPMParameters(double resolution, double alpha){
+        this.resolution = resolution;
+        this.alpha = alpha;
+    }
 }

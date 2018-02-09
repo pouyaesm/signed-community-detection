@@ -25,13 +25,13 @@ public class DetectionTest {
         int[] rows = {      0, 0, 1, 3, 3, 3, 3, 3, 4};
         int[] columns = {   1, 2, 2, 0, 1, 2, 4, 5, 5};
         float[] values = {  1, 1, 1, -1, 1, 1, 1, -1, 1};
-        int[] partition = { 0, 0, 0, 1, 1, 1}; // {0, 1, 2}, {3, 4, 5}
+        int[] partition = { 0, 0, 0, 2, 2, 2}; // {0, 1, 2}, {3, 4, 5}
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
-        SiGraph siGraph = new SiGraph(new Graph(listMatrix));
+        Graph graph = new Graph(listMatrix);
         CPMParameters parameters = new CPMParameters();
         parameters.resolution = 0.005;
         parameters.alpha = 0.5;
-        double hamiltonian = new CPM().evaluate(siGraph, partition, parameters);
+        double hamiltonian = new CPM().evaluate(graph, partition, parameters);
         Assert.assertEquals(-3.955, hamiltonian, 0);
     }
 

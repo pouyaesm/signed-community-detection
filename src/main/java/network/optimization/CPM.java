@@ -223,18 +223,17 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    public double evaluate(MultiGraph graph, int[] partition, ObjectiveParameters parameters) {
+    public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
         CPMParameters cpmParameters = (CPMParameters)parameters;
-        PartitionStatistics posStats = Statistics.partition(partition, graph.getGraph(POSITIVE));
-        PartitionStatistics negStats = Statistics.partition(partition, graph.getGraph(NEGATIVE));
+        PartitionStatistics statistics = Statistics.partition(partition, graph);
         double positiveHamiltonian = 0;
         double negativeHamiltonian = 0;
-        for(int g = 0; g < posStats.size.length ; g++){
-            int nodeCount  = posStats.size[g];
+        for(int g = 0; g < statistics.size.length ; g++){
+            int nodeCount  = statistics.size[g];
             if(nodeCount > 0){
-                positiveHamiltonian -= (posStats.positiveCellValue[g]
+                positiveHamiltonian -= (statistics.positiveCellValue[g]
                         - cpmParameters.resolution * nodeCount * nodeCount); // E+(c) - λ N(c)^2
-                negativeHamiltonian -= negStats.negativeCellValue[g]; // E-(c) - 0 * N(c)^2
+                negativeHamiltonian -= statistics.negativeCellValue[g]; // E-(c) - 0 * N(c)^2
             }
         }
         double hamiltonian = cpmParameters.alpha * positiveHamiltonian

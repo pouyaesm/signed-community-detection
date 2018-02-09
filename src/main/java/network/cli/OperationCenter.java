@@ -86,7 +86,7 @@ public class OperationCenter extends AbstractOperation {
     }
 
     /**
-     * Package.Shared options: boolean undirected,
+     * Shared options: input-output address, undirected, verbose
      * @return
      */
     public static Options getSharedOptions(){

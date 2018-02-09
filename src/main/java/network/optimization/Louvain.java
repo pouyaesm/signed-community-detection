@@ -120,7 +120,7 @@ abstract public class Louvain implements Runnable{
      * @param parameters
      * @return
      */
-    abstract public double evaluate(MultiGraph graph, int[] partition, ObjectiveParameters parameters);
+    abstract public double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters);
 
     public int[] getPartition() {
         return partition;

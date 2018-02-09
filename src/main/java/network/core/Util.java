@@ -99,7 +99,6 @@ public class Util {
      * @return
      */
     public static boolean contains(int value, int[]...arrays) {
-        int count = 0;
         for(int[] array : arrays) {
             for (int v : array) {
                 if (value == v) {

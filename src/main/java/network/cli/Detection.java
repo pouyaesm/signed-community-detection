@@ -49,19 +49,16 @@ public class Detection extends AbstractOperation {
             int[] partition = cpmDetector.detect(siGraph, resolution, alpha, iteration);
             GraphIO.writePartition(siGraph, partition, output);
             GraphIO.writeListMatrix(graph, output + "_graph");
-            double duration = (System.currentTimeMillis() - time) / 1000;
-            Shared.log("Finished in " + duration + " seconds");
             Shared.log("Number of communities: " + Statistics.array(partition).uniqueCount);
-
             CPMapParameters cpMapParameters = new CPMapParameters(
                     0.1f, false, false, threadCount);
             Shared.log("Minimum Description Length: " + SiMap.evaluate(graph, partition, cpMapParameters));
 
-            CPMParameters cpmParameters = new CPMParameters();
-            cpmParameters.resolution = resolution;
-            cpMapParameters.alpha = alpha;
-            Shared.log("Hamiltonian: " + cpmDetector.evaluate(siGraph, partition, cpMapParameters));
+            CPMParameters cpmParameters = new CPMParameters(resolution, alpha);
+            Shared.log("Hamiltonian: " + cpmDetector.evaluate(graph, partition, cpmParameters));
 
+            double duration = (System.currentTimeMillis() - time) / 1000;
+            Shared.log("Finished in " + duration + " seconds");
         } catch( ParseException exp ) {
             // oops, something went wrong
             System.out.println( "Parsing failed.  Reason: " + exp.getMessage() );

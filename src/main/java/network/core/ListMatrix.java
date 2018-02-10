@@ -655,7 +655,7 @@ public class ListMatrix extends AbstractMatrix {
      */
     public ListMatrix symmetrize(){
         if(isEmpty()) return clone();
-        HashMap<Long, Boolean> visitedCell = new HashMap<Long, Boolean>(2 * rows.length);
+        HashMap<Long, Boolean> visitedCell = new HashMap<Long, Boolean>(rows.length);
         int idRange = Util.max(rows, columns) + 1;
         int cellCount = 0;
         int diagonalCount = 0;
@@ -672,12 +672,12 @@ public class ListMatrix extends AbstractMatrix {
                 visitedCell.put(mirrorUniqueId, true);
             }
         }
+        visitedCell.clear();
         // Add each cell and its mirror to new list matrix
         int symCellCount = 2 * cellCount - diagonalCount; // count diagonal cells only once
         int[] symRows = new int[symCellCount];
         int[] symColumns = new int[symCellCount];
         float[] symValues = new float[symCellCount];
-        visitedCell.clear();
         int insertAt = 0;
         for(int p = 0 ; p < rows.length ; p++){
             long uniqueId = idRange * rows[p] + columns[p];

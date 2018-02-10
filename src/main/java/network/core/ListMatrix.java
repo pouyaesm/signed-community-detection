@@ -298,7 +298,7 @@ public class ListMatrix extends AbstractMatrix {
                 toNormal[COL] = Util.normalizeIds(getColumns());
             }
         }else{
-            toNormal = clone ? mapToNormal.clone() : mapToNormal;
+            toNormal = mapToNormal.clone();
         }
         int minRowId = Integer.MAX_VALUE;
         int maxRowId = Integer.MIN_VALUE;
@@ -378,9 +378,10 @@ public class ListMatrix extends AbstractMatrix {
      * @return
      */
     public ListMatrix normalizeKeepRawIds(OpenIntIntHashMap[] mapToNormal, boolean clone){
-        if(isEmpty()) return clone ? clone() : this;
+        if(isEmpty()) return clone ? new ListMatrix() : this;
         int[][] oldRawIds = getToRaw();
         ListMatrix normalizedList = normalize(mapToNormal, null, clone);
+        // if no old raw id exists
         if(oldRawIds == null){
             return normalizedList;
         }
@@ -394,7 +395,12 @@ public class ListMatrix extends AbstractMatrix {
             int minId = dim == ROW ? normalizedList.getMinRowId() : normalizedList.getMinColumnId();
             int maxId = dim == ROW ? normalizedList.getMaxRowId() : normalizedList.getMaxColumnId();
             for(int normalizedId = minId ; normalizedId <= maxId ; normalizedId++){
-                int oldRawId = oldRawIds[dim][newRawIds[dim][normalizedId]];
+                int oldNormalizedId = newRawIds[dim][normalizedId];
+                // check if the oldNormalizedId belongs to this graph
+                // however those not belonging are also registered
+                // if their raw id not exceeding the old raw size
+                if(oldNormalizedId >= oldRawIds[dim].length) continue;
+                int oldRawId = oldRawIds[dim][oldNormalizedId];
                 newRawIds[dim][normalizedId] = oldRawId;
                 newNormalIds[dim].put(oldRawId, normalizedId);
             }
@@ -547,7 +553,7 @@ public class ListMatrix extends AbstractMatrix {
      */
     @Override
     public ListMatrix fold(int[] partition) {
-        if(isEmpty()) return clone();
+        if(isEmpty()) return new ListMatrix();
         int[] allRows = getRows();
         int[] allColumns = getColumns();
         float[] allValues = getValues();

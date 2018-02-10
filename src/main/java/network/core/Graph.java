@@ -1,9 +1,6 @@
 package network.core;
 
 import cern.colt.map.OpenIntIntHashMap;
-import cern.jet.math.Mult;
-
-import static network.core.ListMatrix.ROW;
 
 public class Graph extends SparseMatrix {
     /**
@@ -49,7 +46,7 @@ public class Graph extends SparseMatrix {
             subGraphs[pr] = new Graph(sparseMatrices[pr]);
         }
         // Copy node attributes to new partitions
-        setAttributesInto(subGraphs);
+        copyAttributesTo(subGraphs);
         return subGraphs;
     }
 
@@ -58,14 +55,15 @@ public class Graph extends SparseMatrix {
      * based on shared normalized node ids between the graph and input graphs array
      * @param graphs
      */
-    public void setAttributesInto(Graph[] graphs){
+    public void copyAttributesTo(Graph[] graphs){
         if(!hasAttributes()) return;
         for(int pr = 0 ; pr < graphs.length; pr++){
-            if(graphs[pr] == null) continue;
+            if(graphs[pr] == null || graphs[pr].isEmpty()) continue;
             Graph graph = graphs[pr];
             int subNodeIdRange = graph.getNodeMaxId() + 1;
             float[][] attributes = new float[subNodeIdRange][];
             OpenIntIntHashMap toNormal = graph.getToNormal()[0];
+            int[] toRaw = graph.getToRaw()[0];
             for(int normalizedId = 0 ; normalizedId < subNodeIdRange ; normalizedId++){
                 /*
                     raw id of normalized nodeId of sub-graphs
@@ -73,7 +71,7 @@ public class Graph extends SparseMatrix {
                     so their raw id can be mapped back to nodeIds of this parent
                     using parent's maps
                  */
-                int rawId = graph.getToRaw()[0][normalizedId];
+                int rawId = toRaw[normalizedId];
                 attributes[normalizedId] = getAttributes()[toNormal.get(rawId)].clone();
             }
             graph.setAttributes(attributes);

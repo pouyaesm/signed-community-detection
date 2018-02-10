@@ -112,6 +112,7 @@ public class CPM extends RosvallBergstrom {
                     for(int sign = 0 ; sign < 2 ; sign++) {
                         Graph posOrNeg = sign == POSITIVE ?
                                 graph.getGraph(POSITIVE) : graph.getGraph(NEGATIVE);
+                        if(posOrNeg == null || posOrNeg.isEmpty()) continue;
                         int[] neighbors = posOrNeg.getColumns(nodeId);
                         if(neighbors == null) continue;
                         float[] linkValues = posOrNeg.getValues(nodeId);
@@ -242,7 +243,7 @@ public class CPM extends RosvallBergstrom {
     }
 
     @Override
-    public CPM newDetector() {
+    public CPM newInstance() {
         return (CPM) new CPM()
                 .setResolution(resolution)
                 .setAlpha(alpha)

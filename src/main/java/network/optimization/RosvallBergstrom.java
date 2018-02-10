@@ -1,7 +1,6 @@
 package network.optimization;
 
 import network.Shared;
-import network.core.Graph;
 import network.core.MultiGraph;
 import network.core.Statistics;
 import network.core.Util;
@@ -15,12 +14,6 @@ import java.util.ArrayList;
  * This adds a recursive refinement procedure to the original Louvain optimization algorithm
  */
 abstract public class RosvallBergstrom extends ParallelLouvain {
-
-    /**
-     * Number of links for a sub-graph to be considered large
-     * Graphs with edge groupCount more than this are processed in batch async
-     */
-    public final static int LARGE_SUB_GRAPH = 100000;
 
     /**
      * Find the best partition of the graph
@@ -42,7 +35,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
      * @return
      */
     protected int[][] partition(MultiGraph[] graphs, int refineCount) {
-        ParallelLouvain detector = newDetector();
+        ParallelLouvain detector = newInstance();
         Shared.log("Louvain algorithm started");
         int[][] partition = detector.detect(graphs, 1000000);
         for (int graphId = 0; graphId < graphs.length; graphId++) {
@@ -77,7 +70,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         }
         // Parallel batch detection of large graphs
         if (parallelGraphs.size() > 0) {
-            int[][] partitions = newDetector().detect(parallelGraphs.toArray(new MultiGraph[0]), 1000000);
+            int[][] partitions = newInstance().detect(parallelGraphs.toArray(new MultiGraph[0]), 1000000);
             for (int largeId = 0; largeId < partitions.length; largeId++) {
                 int graphId = parallelGraphs.get(largeId).getId();
                 subPartitions[graphId] = partitions[largeId];
@@ -135,7 +128,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         }
         // Multiple refined partitions (multiple nodes) may go under one partition in folded graph
         // Thus, the group id of nodes must change from refined to folded
-        int[] foldedPartition = newDetector().detect(folded, foldedInitialPartition, 1000000);
+        int[] foldedPartition = newInstance().detect(folded, foldedInitialPartition, 1000000);
         int[] refinedToFolded = new int[graph.getNodeCount()];
         for (int superNodeId = 0; superNodeId < foldedInitialPartition.length; superNodeId++) {
             refinedToFolded[superNodeToRefined[superNodeId]] = foldedPartition[superNodeId];

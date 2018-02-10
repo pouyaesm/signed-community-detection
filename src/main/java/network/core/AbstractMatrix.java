@@ -17,8 +17,9 @@ abstract public class AbstractMatrix {
         return null;
     }
     abstract public boolean isEmpty();
-    public void setId(int id) {
+    public AbstractMatrix setId(int id) {
         this.id = id;
+        return this;
     }
 
     public int getId() {

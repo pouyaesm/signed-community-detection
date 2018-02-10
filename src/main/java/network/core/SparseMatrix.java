@@ -24,7 +24,14 @@ public class SparseMatrix extends ListMatrix {
 
     public SparseMatrix(ListMatrix listMatrix){
         super(listMatrix);
-        buildSparse();
+        buildSparseData();
+    }
+
+    public SparseMatrix(ListMatrix listMatrix, boolean buildSparseData){
+        super(listMatrix);
+        if(buildSparseData) {
+            buildSparseData();
+        }
     }
 
     public SparseMatrix(SparseMatrix sparseMatrix){
@@ -40,13 +47,13 @@ public class SparseMatrix extends ListMatrix {
      * Assumption: there must be no duplicate (row, column) in the inputs
      * @return
      */
-    private void buildSparse() {
+    protected void buildSparseData() {
         if(getRows() == null) return;
         // Populate the sparse data structure with list data
         int[] rows = getRows();
         int[] columns = getColumns();
         float[] values = getValues();
-        // build the internal data structure based on normalized ids
+        // buildSparseData the internal data structure based on normalized ids
         int rowIdRange = Math.max(0, getMaxRowId() + 1); // matrix may be empty
         int[] rowSizes = new int[rowIdRange];
         for(int rowId : rows){
@@ -103,9 +110,15 @@ public class SparseMatrix extends ListMatrix {
         SparseMatrix[] matrices = new SparseMatrix[decomposed.length];
         for(int m = 0 ; m < decomposed.length ; m++){
             if(decomposed[m] == null) continue;
-            matrices[m] = new SparseMatrix(
-                    decomposed[m].normalizeKeepRawIds(mapToNormal, false)
-            );
+            if(mapToNormal != null){
+                // Normalize the decomposed list and build the sparse data structure
+                matrices[m] = new SparseMatrix(
+                        decomposed[m].normalizeKeepRawIds(mapToNormal, false));
+            }else{
+                // Do not normalize, nor build the sparse data structure
+                // thus, delegate the normalization and sparse data construction to caller
+                matrices[m] = new SparseMatrix(decomposed[m], false);
+            }
         }
         return matrices;
     }

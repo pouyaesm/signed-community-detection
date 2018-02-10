@@ -37,7 +37,7 @@ abstract public class ParallelLouvain extends Louvain {
         // Serial execution
         if(threadCount <= 1 || graphs.length == 1){
 //            Shared.log("Run serial detection");
-            Louvain detector = newDetector();
+            Louvain detector = newInstance();
             for(int g = 0 ; g < graphs.length ; g++){
                 partitions[g] = initialPartitions[g];
                 if(graphs[g] == null || graphs[g].isEmpty()) continue;
@@ -60,12 +60,11 @@ abstract public class ParallelLouvain extends Louvain {
         }
         // Assign each louvain detector to a worker
         // each worker roughly runs the same number of algorithms by using modulo %
-
         for(int g = 0 ; g < graphs.length ; g++){
             partitions[g] = initialPartitions[g]; // as the default answer if no detection is carried out
             if(graphs[g] == null || graphs[g].isEmpty()) continue; // no edge to detect
             // set the graphId for detector to distinguish it when the partitions are detected
-            Louvain detector = newDetector().init(graphs[g], initialPartitions[g], foldCount).setId(g);
+            Louvain detector = newInstance().init(graphs[g], initialPartitions[g], foldCount).setId(g);
             // Add the job to lightest thread load, then re-insert it into priority queue
             Entry load = threadLoad.poll();
             workers[load.getKey()].add(detector);
@@ -98,7 +97,7 @@ abstract public class ParallelLouvain extends Louvain {
      * Instantiate a detector to carry on the task
      * @return
      */
-    abstract public ParallelLouvain newDetector();
+    abstract public ParallelLouvain newInstance();
 
     public ParallelLouvain setThreadCount(int threadCount) {
         this.threadCount = threadCount;

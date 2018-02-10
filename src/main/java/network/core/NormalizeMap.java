@@ -4,7 +4,7 @@ import cern.colt.map.OpenIntIntHashMap;
 
 /**
  * Holder of normalization maps data structure,
- * and the maximum normalized id used to build the reverse taw to normal maps
+ * and the maximum normalized id used to buildSparseData the reverse taw to normal maps
  */
 public class NormalizeMap {
 

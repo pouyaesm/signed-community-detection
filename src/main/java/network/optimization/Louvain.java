@@ -67,9 +67,9 @@ abstract public class Louvain implements Runnable{
         // Rebuild the network of communities:
         // Fold negative & positive sub-graphs separately according to partition
         MultiGraph foldedGraph = graph.fold(partition);
-        // At least 0.1% decrease in network size is expected
+        // At least 1% decrease in network size is expected
         double sizeRatio = (double) foldedGraph.getNodeCount() / graph.getNodeCount();
-        if(sizeRatio > 0.999 || foldedGraph.getNodeCount() <= 1){
+        if(sizeRatio > 0.99 || foldedGraph.getNodeCount() <= 1){
             return partition;
         }
         // Recursive detect optimization, partition the network of groups
@@ -133,5 +133,10 @@ abstract public class Louvain implements Runnable{
 
     public int getId() {
         return id;
+    }
+
+    @Override
+    public String toString() {
+        return "Graph " + id + " (" + graph.getNodeCount() + ", " + graph.getEdgeCount() + ")";
     }
 }

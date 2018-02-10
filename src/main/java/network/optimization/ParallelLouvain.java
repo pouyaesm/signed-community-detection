@@ -41,7 +41,6 @@ abstract public class ParallelLouvain extends Louvain {
             for(int g = 0 ; g < graphs.length ; g++){
                 partitions[g] = initialPartitions[g];
                 if(graphs[g] == null || graphs[g].isEmpty()) continue;
-                // run the detector
                 partitions[g] = detector.detect(graphs[g], initialPartitions[g], foldCount);
             }
             return partitions;

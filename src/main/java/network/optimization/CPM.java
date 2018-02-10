@@ -2,6 +2,8 @@ package network.optimization;
 
 import network.core.*;
 
+import java.util.ArrayList;
+
 import static network.core.SiGraph.NEGATIVE;
 import static network.core.SiGraph.POSITIVE;
 
@@ -82,8 +84,8 @@ public class CPM extends RosvallBergstrom {
         double hamChange = 0; // total change of hamiltonian objective
         float movedNodes = N; // number of moved nodes into other groups (0 if groups stay the same)
         // At least 1% node movement is expected to redo the merge pass
-
-        while (hamImproved && (movedNodes / N) >= 0.01){
+        // Also it is found that a node may alternate between two neighbors infinitely!
+        while (hamImproved && movedNodes > 1 && (movedNodes / N) >= 0.01){
             int[] permute = Util.permute(N); // nodes will be visited in random order
             hamImproved = false;
             movedNodes = 0;

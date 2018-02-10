@@ -131,7 +131,7 @@ public class MultiGraph extends Graph {
             int typeId = (int) graphEntry.getKey();
             Graph[] typeSubGraphs = (Graph[]) graphEntry.getValue();
             // add sub graph of type 'typeId' to all multi-graph 'groupId'
-            for(int groupId = 0 ; groupId < typeSubGraphs.length ; groupId++){
+            for(int groupId = 0 ; groupId < groupCount ; groupId++){
                 multiGraphs[groupId].addGraph(typeId, typeSubGraphs[groupId]);
             }
         }

@@ -9,8 +9,9 @@ import java.util.ArrayList;
  */
 public class MultiRunnable implements Runnable {
 
-    private static int counter = 0;
-
+    /**
+     * Runnables each holding a task, which will be executed sequentially
+     */
     ArrayList<Runnable> runnables;
 
     public MultiRunnable(){
@@ -40,13 +41,6 @@ public class MultiRunnable implements Runnable {
     public void run() {
         for(Runnable runnable : runnables){
             runnable.run();
-            addCounter(runnable);
         }
-    }
-
-    public synchronized static void addCounter(Runnable runnable){
-        counter++;
-        System.out.println(Thread.currentThread().getName()
-                + " " + runnable.toString() + " done (" + counter + ")");
     }
 }

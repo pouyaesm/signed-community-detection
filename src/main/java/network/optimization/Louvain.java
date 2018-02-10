@@ -35,7 +35,6 @@ abstract public class Louvain implements Runnable{
     public int[] detect(MultiGraph graph, int[] initialPartition, int foldCount){
         this.foldCount = foldCount;
         int[] partition = detect(graph, initialPartition);
-//        Shared.log(Thread.currentThread().getId() + ": Louvain on " + graph.getNodeCount() + " nodes finished");
         return partition;
     }
 

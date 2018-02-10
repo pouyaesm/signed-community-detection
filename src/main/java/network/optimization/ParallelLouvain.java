@@ -80,8 +80,8 @@ abstract public class ParallelLouvain extends Louvain {
                 threads[workerId].join(); // wait for this worker to finish its job
                 MultiRunnable worker = workers[workerId];
                 int detectorCount = worker.size();
-                for(int detectorId = 0 ; detectorId < detectorCount ; detectorId++){
-                    Louvain detector = (Louvain) worker.get(detectorId);
+                for(int index = 0 ; index < detectorCount ; index++){
+                    Louvain detector = (Louvain) worker.get(index);
                     partitions[detector.getId()] = detector.getPartition();
                 }
             }

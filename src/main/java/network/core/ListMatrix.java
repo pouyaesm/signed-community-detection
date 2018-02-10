@@ -298,7 +298,8 @@ public class ListMatrix extends AbstractMatrix {
                 toNormal[COL] = Util.normalizeIds(getColumns());
             }
         }else{
-            toNormal = mapToNormal.clone();
+            // cloning maps is generally heavy, do it when change is required
+            toNormal = mapToNormal;
         }
         int minRowId = Integer.MAX_VALUE;
         int maxRowId = Integer.MIN_VALUE;
@@ -336,7 +337,8 @@ public class ListMatrix extends AbstractMatrix {
             toRaw[ROW] = new int[maxRowId + 1];
             toRaw[COL] = new int[maxColumnId + 1];
         }else{
-            toRaw = clone ? mapToRaw.clone() : mapToRaw;
+            // cloning maps is generally heavy, do it when change is required
+            toRaw = mapToRaw;
         }
         // Construct the toRaw id mapper from all toNormal elements
         for(int dim = 0 ; dim < 2 ; dim++){
@@ -385,21 +387,18 @@ public class ListMatrix extends AbstractMatrix {
         if(oldRawIds == null){
             return normalizedList;
         }
-        // Example: [3, 4, 5] -> [0, 1, 2], then sub matrix [1, 2] -> [0, 1]
-        // We want to maps [0, 1] back to [4, 5] instead of [1, 2]
-        int[][] newRawIds = normalizedList.getToRaw();
-        OpenIntIntHashMap[] newNormalIds = normalizedList.getToNormal();
-        newNormalIds[ROW].clear();
-        newNormalIds[COL].clear();
+        // Assume node id 3 before normalization,
+        // thus: 3 <-oldToNormal- 20 <-oldRawId- 3 -toNormal-> 0 -newRawId -> 3
+        // We want to map new normalized id 0 <-> 20 instead of 0 <-> 3
+        int[][] newRawIds = normalizedList.getToRaw(); // this is always new (no reference)
+        OpenIntIntHashMap[] newNormalIds = new OpenIntIntHashMap[2];
+        newNormalIds[ROW] = new OpenIntIntHashMap(newRawIds[ROW].length);
+        newNormalIds[COL] = new OpenIntIntHashMap(newRawIds[COL].length);
         for(int dim = 0 ; dim < 2 ; dim++){
             int minId = dim == ROW ? normalizedList.getMinRowId() : normalizedList.getMinColumnId();
             int maxId = dim == ROW ? normalizedList.getMaxRowId() : normalizedList.getMaxColumnId();
             for(int normalizedId = minId ; normalizedId <= maxId ; normalizedId++){
                 int oldNormalizedId = newRawIds[dim][normalizedId];
-                // check if the oldNormalizedId belongs to this graph
-                // however those not belonging are also registered
-                // if their raw id not exceeding the old raw size
-                if(oldNormalizedId >= oldRawIds[dim].length) continue;
                 int oldRawId = oldRawIds[dim][oldNormalizedId];
                 newRawIds[dim][normalizedId] = oldRawId;
                 newNormalIds[dim].put(oldRawId, normalizedId);

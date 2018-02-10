@@ -100,7 +100,7 @@ public class SparseMatrix extends ListMatrix {
     /**
      * Decompose the sparse matrix into given partitions
      * using the provided normalization map
-     * @param mapToNormal node ids are changed according to this map
+     * @param mapToNormal normalizes node ids, if null, ids remain un-changed
      * @param partition
      * @return
      */

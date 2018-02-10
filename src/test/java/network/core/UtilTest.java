@@ -36,15 +36,16 @@ public class UtilTest {
 
     @Test
     public void testNormalizeIds(){
-        int[] ids1 = {3, 5, 3, 3, 1, 1};
+        int[] ids1 = {0, 3, 5, 3, 3, 1, 1, 0};
         int[] ids2 = {1, 3, 3, 6};
-        int[] expected = {-1, 2, -1, 0, -1, 1, 3};//3 -> 0, 5 -> 1, 1 -> 2, 6 -> 3
         OpenIntIntHashMap normalizedIds = Util.normalizeIds(ids1, ids2);
-        Assert.assertEquals(0, normalizedIds.get(3));
-        Assert.assertEquals(1, normalizedIds.get(5));
-        Assert.assertEquals(2, normalizedIds.get(1));
-        Assert.assertEquals(3, normalizedIds.get(6));
+        // expected: 0 -> 0, 3 -> 1, 5 -> 2, 1 -> 3, 6 -> 4
         Assert.assertEquals(0, normalizedIds.get(0));
+        Assert.assertEquals(1, normalizedIds.get(3));
+        Assert.assertEquals(2, normalizedIds.get(5));
+        Assert.assertEquals(3, normalizedIds.get(1));
+        Assert.assertEquals(4, normalizedIds.get(6));
+        Assert.assertEquals(0, normalizedIds.get(7));
     }
 
     @Test

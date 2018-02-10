@@ -158,8 +158,9 @@ public class MultiGraph extends Graph {
         int index = 0;
         while(iterator.hasNext()){
             Map.Entry typeGraph = (Map.Entry) iterator.next();
-            ids[index++] = ((Graph) typeGraph.getValue()).getRows();
-            ids[index++] = ((Graph) typeGraph.getValue()).getColumns();
+            Graph graph = (Graph) typeGraph.getValue();
+            ids[index++] = graph.getRows();
+            ids[index++] = graph.getColumns();
         }
         // Normalize ids
         OpenIntIntHashMap[] mapToNormal = new OpenIntIntHashMap[2];

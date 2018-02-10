@@ -86,7 +86,7 @@ public class CPM extends RosvallBergstrom {
         // At least 1% node movement is expected to redo the merge pass
         // Also it is found that a node may alternate between two neighbors infinitely!
         while (hamImproved && movedNodes > 1 && (movedNodes / N) >= 0.01){
-            int[] permute = Util.permute(N); // nodes will be visited in random order
+            int[] permute = Util.permute(partition.length); // nodes will be visited in random order
             hamImproved = false;
             movedNodes = 0;
             for(int k = 0 ; k < partition.length ; k++){

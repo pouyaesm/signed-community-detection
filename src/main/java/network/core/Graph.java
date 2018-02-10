@@ -34,7 +34,7 @@ public class Graph extends SparseMatrix {
      * Decompose graph based on the partition, normalize node ids of each sub-graph
      * Partitions are assumed to be normalized into 0..K-1
      * @param partition
-     * @param mapToNormal
+     * @param mapToNormal if null, ids remain un-changed
      * @return
      */
     @Override

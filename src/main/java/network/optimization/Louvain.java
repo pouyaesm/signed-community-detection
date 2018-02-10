@@ -73,7 +73,7 @@ abstract public class Louvain implements Runnable{
         }
         // Recursive detect optimization, partition the network of groups
         int[] foldedPartition = detect(foldedGraph,
-                Util.ramp(foldedGraph.getNodeCount()), foldCount - 1);
+                Util.ramp(foldedGraph.getNodeMaxId() + 1), foldCount - 1);
         /*
          * Node with groupId = g in the current level gets groupId = maps[g] after coarsening
          * e.g. a node x is in group 10, group 10 is node 0 in folded graph

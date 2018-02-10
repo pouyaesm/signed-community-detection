@@ -151,12 +151,12 @@ public class Util {
     public static OpenIntIntHashMap normalizeIds(int[]... ids) {
         int uniqueCount = Statistics.array(ids).uniqueCount;
         OpenIntIntHashMap toNormal = new OpenIntIntHashMap(uniqueCount);
-        int counter = 0;
+        int normalizedId = 0;
         for (int[] id : ids) {
             for (int i = 0; i < id.length; i++) {
                 int rawId = id[i];
                 if (rawId >= 0 && !toNormal.containsKey(rawId)) {
-                    toNormal.put(rawId, counter++); // starts from 0
+                    toNormal.put(rawId, normalizedId++); // starts from 0
                 }
             }
         }

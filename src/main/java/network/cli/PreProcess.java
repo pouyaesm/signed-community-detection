@@ -44,14 +44,14 @@ public class PreProcess extends AbstractOperation{
             boolean outputLargestCC = line.hasOption(LARGEST_CC);
             boolean outputPartition = line.hasOption(OUTPUT_PARTITION);
             boolean outputGraph = line.hasOption(OUTPUT_GRAPH);
-            boolean isUndirected = line.hasOption(OperationCenter.UNDIRECTED);
+            boolean isDirected = line.hasOption(OperationCenter.DIRECTED);
             String outputPrefix = line.getOptionValue(OUTPUT_PREFIX, "");
             Shared.setVerbose(line.hasOption(OperationCenter.VERBOSE));
             System.out.println(lowerBound + " " + upperBound);
             // Read the graph
             Graph graph;
             try {
-                graph = GraphIO.readGraph(input, isUndirected);
+                graph = GraphIO.readGraph(input, !isDirected);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;

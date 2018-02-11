@@ -59,7 +59,7 @@ public class MDL extends AbstractOperation{
 
             String output = line.getOptionValue(OperationCenter.OUTPUT, "");
             if(output.length() == 0){
-                Shared.log(OperationCenter.ERR_OUTPUT_NOT_SPECIFIED);
+                throw new ParseException(OperationCenter.ERR_OUTPUT_NOT_SPECIFIED);
             }
 
             String inputPartition = line.getOptionValue(OperationCenter.INPUT_PARTITION, "");
@@ -79,7 +79,7 @@ public class MDL extends AbstractOperation{
             }
 
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
-            boolean isUndirected = line.hasOption(OperationCenter.UNDIRECTED);
+            boolean isDirected = line.hasOption(OperationCenter.DIRECTED);
 
             float teleport = Float.parseFloat(line.getOptionValue(TELEPORT, TELEPORT_DEFAULT));
             float specificResolution = Float.parseFloat(line.getOptionValue(
@@ -95,7 +95,7 @@ public class MDL extends AbstractOperation{
                     line.getOptionValue(RESOLUTION_ACCURACY, RESOLUTION_ACCURACY_DEFAULT));
 
             // Read the graph and construct the signed multi-graph
-            Graph graph = GraphIO.readGraph(inputGraph, isUndirected);
+            Graph graph = GraphIO.readGraph(inputGraph, !isDirected);
             SiGraph siGraph = new SiGraph(graph);
 
             // Prepare the detector/evaluator and the given parameters

@@ -15,13 +15,13 @@ Input graph format is required to be:
 id1     id2     weight
 ...
 ```
-where each line represents a link from `id1` to `id2`.
+where each line represents a link from `id1` to `id2`; 
+graph is considered undirected by default.
 
 To detect the communities of `graph.txt`, run the command below:
 ```
 mdl --verbose -g graph.txt -o partition.txt
 ```
-If a graph is undirected add `--undirected` parameter.
 
 To detect a community at a specific scale (resolution)  value `0.001`, run:
 ```
@@ -37,6 +37,8 @@ and write the evaluation result to `mdl.txt`, run:
 ```
 mdl -g graph.txt -p partition.txt -o mdl.txt
 ```
+If a graph is directed add `--directed` parameter. Unlike evaluation,
+community detection does not support directed graphs.
 
 If you want to evaluate a group of partitions `partition-*.txt`, run:
 

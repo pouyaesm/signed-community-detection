@@ -14,7 +14,7 @@ public class OperationCenter extends AbstractOperation {
     public static final String INPUT_GRAPH = "g";
     public static final String INPUT_PARTITION = "p";
     public static final String OUTPUT = "o";
-    public static final String UNDIRECTED = "undirected";
+    public static final String DIRECTED = "directed";
     public static final String RESOLUTION = "r";
     public static final String ALPHA = "a";
     public static final String ALPHA_DEFAULT = "0.5";
@@ -99,7 +99,7 @@ public class OperationCenter extends AbstractOperation {
                 .desc("Output address")
                 .hasArg().hasArg().argName("address").type(String.class).build();
         Option unDirected = Option.builder()
-                .longOpt(UNDIRECTED).desc("when link (a, b) exists, (b, a) is also considered").build();
+                .longOpt(DIRECTED).desc("when link (a, b) differs from (b, a)").build();
         Option verbose = Option.builder()
                 .longOpt(VERBOSE).desc("output the progress messages").build();
         Options options = new Options()

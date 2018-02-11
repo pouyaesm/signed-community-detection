@@ -1,8 +1,8 @@
-package network.signedmapequation;
+package network.extendedmapequation;
 
 import network.core.Graph;
 
-public class SiMapStatistics {
+public class CPMapStatistics {
 
     /**
      * inWeight[nodeId] is the total weight of nodeId toward the inside of its group

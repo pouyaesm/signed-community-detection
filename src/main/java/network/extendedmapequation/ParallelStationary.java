@@ -1,10 +1,7 @@
-package network.signedmapequation;
+package network.extendedmapequation;
 
 import network.core.SparseMatrix;
 import network.core.Util;
-import network.optimization.Louvain;
-import network.utils.Entry;
-import network.utils.MultiRunnable;
 
 /**
  * Calculates P * G matrix multiplication in parallel

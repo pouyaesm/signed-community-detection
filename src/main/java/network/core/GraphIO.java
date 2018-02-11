@@ -33,8 +33,10 @@ public class GraphIO {
         ArrayList<Integer> inputRows = new ArrayList<>();
         ArrayList<Integer> inputColumns = new ArrayList<>();
         ArrayList<Float> inputValues = new ArrayList<>();
+        int lineCount = 0;
         while(scanner.hasNextLine()){
             String line = scanner.nextLine();
+            lineCount++;
             StringTokenizer tkn = new StringTokenizer(line," \t");
             int tokenCount = tkn.countTokens();
             if (tokenCount == 2) {
@@ -45,7 +47,8 @@ public class GraphIO {
                 inputColumns.add(Integer.parseInt(tkn.nextToken()));
                 inputValues.add(Float.parseFloat(tkn.nextToken()));
             }else if(Util.isNumber(tkn.nextToken())){
-                throw new Exception("Each line of file must contain 'sourceId targetId' " +
+                throw new Exception("Error at line " + lineCount
+                        + ". Each line must contain 'sourceId targetId' " +
                         "or 'sourceId targetId weight'");
             }
             // Otherwise line is ignored as it may contain comments
@@ -64,25 +67,84 @@ public class GraphIO {
     }
 
     /**
+     * Read a node group assignment based on the normalization map
+     * to normalize node ids appropriate for the corresponding nodes of a graph
+     * @param address
+     * @param toNormal
+     * @return
+     * @throws Exception
+     */
+    public static int[] readPartition(String address, OpenIntIntHashMap toNormal) throws Exception{
+        int[] partition = Util.initArray(toNormal.size(), -1);
+        FileInputStream fis = new FileInputStream(address);
+        Scanner scanner = new Scanner(fis);
+        int lineCount = 0, assigmentCount = 0;
+        while(scanner.hasNextLine()){
+            String line = scanner.nextLine();
+            lineCount++;
+            StringTokenizer tkn = new StringTokenizer(line," \t");
+            int tokenCount = tkn.countTokens();
+            if (tokenCount == 2) {
+                int nodeId = toNormal.get(Integer.parseInt(tkn.nextToken()));
+                int partitionId = Integer.parseInt(tkn.nextToken());
+                if(partition[nodeId] != -1){
+                    throw new Exception("Second group assignment at line " + lineCount);
+                }
+                partition[nodeId] = partitionId;
+                assigmentCount++;
+            } else if(Util.isNumber(tkn.nextToken())){
+                throw new Exception("Error at line " + lineCount
+                        + ". Each line must contain 'nodeId groupId'");
+            }
+        }
+        if(assigmentCount != partition.length){
+            throw new Exception("Some nodes are not assigned to any partition");
+        }
+        return partition;
+    }
+    /**
      * Write detection partition to file using the un-Normalized nodes
      * @param graph
      * @param partition
      * @param address
      */
     public static void writePartition(Graph graph, int[] partition, String address){
+        writePartition(graph, new int[][]{partition}, new String[]{address});
+    }
+
+    /**
+     * Write detection partition to file using the un-Normalized nodes
+     * @param graph
+     * @param partitions
+     * @param addresses
+     */
+    public static void writePartition(Graph graph, int[][] partitions, String[] addresses){
         int[] toRaw = graph.getToRaw()[0]; // convert nodeIds back to un-normalized inputs
-        BufferedWriter writer;
+        BufferedWriter[] writers;
         try {
-            writer = new BufferedWriter(new FileWriter(address));
-            for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-                writer.write(toRaw[nodeId] + "\t" + partition[nodeId] + "\n");
+            writers = new BufferedWriter[partitions.length];
+            for(int p = 0 ; p < partitions.length ; p++) {
+                if(partitions[p] == null) continue;
+                writers[p] = new BufferedWriter(new FileWriter(addresses[p]));
+                int[] partition = partitions[p];
+                for (int nodeId = 0; nodeId < partition.length; nodeId++) {
+                    if (toRaw != null) {
+                        writers[p].write(toRaw[nodeId] + "\t" + partition[nodeId] + "\n");
+                    } else {
+                        writers[p].write(nodeId + "\t" + partition[nodeId] + "\n");
+                    }
+                }
             }
-            writer.flush();
-            Shared.log("Partition has been saved to " + getFileName(address));
+            // Flush the writers
+            for(int partitionId = 0 ; partitionId < writers.length ; partitionId++){
+                if(writers[partitionId] == null) continue;
+                writers[partitionId].flush();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     /**
      * Write the list matrix as "sourceId targetId weight"
@@ -98,7 +160,6 @@ public class GraphIO {
         BufferedWriter[] writers;
         try {
             writers = new BufferedWriter[listMatrices.length];
-            int totalEdgeCount = 0; // this is adapt the level of verbosity to size of matrices
             for(int m = 0 ; m < listMatrices.length ; m++) {
                 if(listMatrices[m] == null) continue;
                 writers[m] = new BufferedWriter(new FileWriter(addresses[m]));
@@ -114,18 +175,11 @@ public class GraphIO {
                         writers[m].write(rows[p] + "\t" + columns[p] + "\t" + values[p] + "\n");
                     }
                 }
-                totalEdgeCount += listMatrices[m].getRows().length;
             }
             // Flush the writers
             for(int graphId = 0 ; graphId < writers.length ; graphId++){
                 if(writers[graphId] == null) continue;
                 writers[graphId].flush();
-                // Ensure that the logged lists do not exceed 10
-                double edgeRatio = (double) listMatrices[graphId].getRows().length / totalEdgeCount;
-                if(edgeRatio >= 0.1) {
-                    Shared.log("List " + graphId
-                            + " has been saved to " + getFileName(addresses[graphId]));
-                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -133,16 +187,20 @@ public class GraphIO {
     }
 
     /**
-     * Extract the file name from address
-     * @param address
-     * @return
+     * Write array of evaluations
+     * Each evaluation has a name (mostly the same as partition name) and a value
+     * @param evaluations
      */
-    public static String getFileName(String address){
-        int lastSeparator = Math.max(address.lastIndexOf("/"), address.lastIndexOf("\\"));
-        if(lastSeparator < 0){
-            return address;
-        }else{
-            return address.substring(lastSeparator + 1);
+    public static void writeEvaluation(String[][] evaluations, String address){
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(address));
+            for(int e = 0 ; e < evaluations.length ; e++) {
+                writer.write(evaluations[e][0] + "\t" + evaluations[e][1] + "\n");
+            }
+            // Flush the writer
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

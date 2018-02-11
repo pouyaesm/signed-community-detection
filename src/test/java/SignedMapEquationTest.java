@@ -3,10 +3,10 @@ import network.core.GraphIO;
 import network.core.ListMatrix;
 import network.core.SparseMatrix;
 import network.optimization.CPMapParameters;
-import network.signedmapequation.ParallelStationary;
-import network.signedmapequation.SiMap;
-import network.signedmapequation.SiMapStatistics;
-import network.signedmapequation.Stationary;
+import network.extendedmapequation.CPMap;
+import network.extendedmapequation.ParallelStationary;
+import network.extendedmapequation.CPMapStatistics;
+import network.extendedmapequation.Stationary;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class SignedMapEquationTest {
     public void testReWeight() throws Exception{
         Graph graph = GraphIO.readGraph("testCases/siMap.txt", false);
         int[] partition = {0, 0, 0, 0, 1, 2, 2}; // {0, 1, 2, 3}, {4}, {5, 6}
-        SiMapStatistics statistics = SiMap.reWeight(graph, partition);
+        CPMapStatistics statistics = CPMap.reWeight(graph, partition);
         // Check transitions and neighbors of node "0" ("1" in graph file)
         int[] expectedNeighbors = {1, 3, 4};
         float[] expectedTransitions = {0.1875f, 0.1875f, 0.25f};
@@ -29,7 +29,7 @@ public class SignedMapEquationTest {
         // InfoMap positive graph reWeight test (graph must remain unchanged)
         Graph infoMapToyGraph = GraphIO.readGraph("testCases/infoMap.txt", true);
         int[] toyPartition = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3};
-        SiMapStatistics toyStatistics = SiMap.reWeight(infoMapToyGraph, toyPartition);
+        CPMapStatistics toyStatistics = CPMap.reWeight(infoMapToyGraph, toyPartition);
         // Inspect node 2 on the edge of group 0 and 1
         Assert.assertArrayEquals(new int[]{0, 1, 3, 7}
                 , toyStatistics.transition.getColumns(2));
@@ -45,7 +45,7 @@ public class SignedMapEquationTest {
         int[] rows = {          1,      1,      2,      2,      3,      3};
         int[] columns = {       2,      3,      1,      3,      1,      2};
         float[] transitions = { 0.25f,  0.75f,   0.25f,  0.75f,  0.25f,  0.75f};
-        SiMapStatistics statistics = new SiMapStatistics();
+        CPMapStatistics statistics = new CPMapStatistics();
         statistics.transition = new Graph(
                 new ListMatrix().init(rows, columns, transitions, true).normalize());
         statistics.negativeTeleport = new double[]{0, 0, 0};
@@ -70,12 +70,12 @@ public class SignedMapEquationTest {
         // Link Recorded (best recommended setting)
         CPMapParameters parameters = new CPMapParameters(
                 0.15f, false, false, 1);
-        double descriptionLength = SiMap.evaluate(graph, bestPartition, parameters);
+        double descriptionLength = CPMap.evaluate(graph, bestPartition, parameters);
         Assert.assertEquals(3.2469, descriptionLength, 0.0001);
         // Node UnRecorded (naive-worst setting)
         parameters.USE_RECORDED = true;
         parameters.TELEPORT_TO_NODE = true;
-        descriptionLength = SiMap.evaluate(graph, bestPartition, parameters);
+        descriptionLength = CPMap.evaluate(graph, bestPartition, parameters);
         Assert.assertEquals(3.7307, descriptionLength, 0.0001f);
     }
 
@@ -90,7 +90,7 @@ public class SignedMapEquationTest {
         Graph graph = new Graph(listMatrix);
         CPMapParameters parameters = new CPMapParameters(
                 0.1f, false, false, 1);
-        double minimumDescriptionLength = SiMap.evaluate(graph, partition, parameters);
+        double minimumDescriptionLength = CPMap.evaluate(graph, partition, parameters);
         Assert.assertEquals(2.8238, minimumDescriptionLength, 0.0001);
     }
 

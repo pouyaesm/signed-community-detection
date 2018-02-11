@@ -29,7 +29,7 @@ public class ConnectedComponents {
 
     public ConnectedComponents init(Graph graph){
         this.graph = graph;
-        this.components = Util.intArray(graph.getNodeMaxId() + 1, -1);
+        this.components = Util.initArray(graph.getNodeMaxId() + 1, -1);
         this.largestComponentId = -1;
         return this;
     }

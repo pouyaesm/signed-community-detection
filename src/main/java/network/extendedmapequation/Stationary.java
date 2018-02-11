@@ -1,4 +1,4 @@
-package network.signedmapequation;
+package network.extendedmapequation;
 
 import network.Shared;
 import network.core.Graph;
@@ -22,7 +22,7 @@ public class Stationary {
      * @param tau
      * @return
      */
-    public SiMapStatistics visitProbabilities(SiMapStatistics statistics, int[] partition, float tau){
+    public CPMapStatistics visitProbabilities(CPMapStatistics statistics, int[] partition, float tau){
         statistics.nodeRecorded = nodeRecorded(statistics.transition
                 , statistics.teleport, statistics.negativeTeleport, tau, 0.000000000000001);
         statistics.nodeUnRecorded = nodeUnRecorded(statistics.transition,
@@ -112,7 +112,7 @@ public class Stationary {
      * @param useRecorded
      * @return
      */
-    public double[] group(SiMapStatistics statistics, int[] partition, double tau, boolean useRecorded){
+    public double[] group(CPMapStatistics statistics, int[] partition, double tau, boolean useRecorded){
         int nodeCount = statistics.transition.getNodeCount();
         int groupIdRange = Util.max(partition) + 1;
         // probability of exiting or entering groupId

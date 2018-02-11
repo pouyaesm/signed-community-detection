@@ -1,33 +1,92 @@
-package network.signedmapequation;
+package network.extendedmapequation;
 
-import network.core.Graph;
-import network.core.ListMatrix;
-import network.core.Util;
+import network.Shared;
+import network.core.*;
+import network.optimization.CPM;
 import network.optimization.CPMapParameters;
 import network.optimization.ObjectiveParameters;
 
-public class SiMap {
+public class CPMap {
 
-    public static int[] detect(Graph graph, ObjectiveParameters parameters){
-        CPMapParameters cpMapParameters = (CPMapParameters) parameters;
-
-        return null;
+    public static int[] detect(Graph graph, ObjectiveParameters CPMapParameters){
+        CPMapParameters parameters = (CPMapParameters) CPMapParameters;
+        float start = parameters.resolutionStart;
+        float length = parameters.resolutionEnd - start;
+        float accuracy = parameters.resolutionAccuracy;
+        int threadCount = parameters.threadCount;
+        // number of resolutions chosen from [start, start + length] to be evaluated
+        // only two (4 and 5) needs to be recalculated on each solution refinement:
+        // [1] [2] [3] -> [1] 4 [2] 5 [3]
+        int count = 5;
+        double[] mdl = Util.initArray(count, -1.0);// quality based on extended map equation
+        double bestMdl = Double.POSITIVE_INFINITY;
+        float bestResolution = -1;
+        int bestIndex = -1; // index of best resolution in array
+        int[] bestPartition = null;
+        CPM detector = (CPM) new CPM().setThreadCount(threadCount);
+        SiGraph siGraph = new SiGraph(graph);
+        Shared.log("CPMap started");
+        while(length > accuracy){
+            float[] resolutions = Util.split(start, start + length, count);
+            Shared.log("Search in [" + start + ", " + (start + length) + "]");
+            for(int r = 0 ; r < mdl.length ; r++){
+                if(mdl[r] >= 0) continue; // mdl has been calculated and compared before
+                int[] partition = detector.setResolution(resolutions[r]).detect(siGraph);
+                mdl[r] = CPMap.evaluate(graph, partition, CPMapParameters);
+                Shared.log(" Resolution: " + resolutions[r]);
+                Shared.log(" MDL: " + mdl[r]);
+                if(mdl[r] < bestMdl){
+                    bestPartition = partition;
+                    bestResolution = resolutions[r];
+                    bestMdl = mdl[r];
+                    bestIndex = r;
+                }
+            }
+            if(bestIndex == 0) { // one interval ends was the best
+                length = resolutions[1] - start; // refine the first sub-interval
+                double secondMdl = mdl[1];
+                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                mdl[0] = bestMdl;
+                mdl[mdl.length - 1] = secondMdl;
+            }else if (bestIndex == count - 1){
+                length = resolutions[1] - start;
+                double secondLastMdl = mdl[mdl.length - 2];
+                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                mdl[0] = secondLastMdl;
+                mdl[mdl.length - 1] = bestMdl;
+            } else { // best one is neither of both ends
+                // refine the solution from one step behind to one step after the best solution
+                start = resolutions[bestIndex - 1]; // start one step before best one
+                length = resolutions[bestIndex + 1] - start;
+                double firstMdl = mdl[bestIndex - 1];
+                double lastMdl = mdl[bestIndex + 1];
+                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                // replace the three evaluated resolutions again
+                bestIndex = count / 2;
+                mdl[0] = firstMdl;
+                mdl[bestIndex] = bestMdl;
+                mdl[count - 1] = lastMdl;
+            }
+        }
+        Shared.log("Best resolution: " + bestResolution);
+        Shared.log("Best MDL: " + bestMdl);
+        return bestPartition != null ? bestPartition : Util.ramp(graph.getNodeMaxId() + 1);
     }
 
-    public static double evaluate(Graph graph, int[] partition, ObjectiveParameters parameters) {
-        CPMapParameters cpMapParameters = (CPMapParameters) parameters;
-        SiMapStatistics statistics = reWeight(graph, partition);
+    public static double evaluate(Graph graph, int[] partition, ObjectiveParameters CPMapParameters) {
+        CPMapParameters parameters = (CPMapParameters) CPMapParameters;
+        CPMapStatistics statistics = reWeight(graph, partition);
         // Teleport probabilities from each node to guarantee stationary state of G * p = p
         int nodeIdRange = statistics.transition.getNodeMaxId() + 1;
         int nodeCount = statistics.transition.getNodeCount();
         statistics.teleport = new double[nodeIdRange];
-        if(cpMapParameters.TELEPORT_TO_NODE){
-            double probability = 1.0f / nodeCount;
+        if(parameters.TELEPORT_TO_NODE){
+            double probability = 1.0f / nodeIdRange;
             for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
                 statistics.teleport[nodeId] = probability;
             }
         }else{
-            if(cpMapParameters.USE_RECORDED){
+            if(parameters.USE_RECORDED){
                 double totalInWeight = Util.sum(statistics.inWeight);
                 for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
                     statistics.teleport[nodeId] = statistics.inWeight[nodeId] / totalInWeight;
@@ -39,13 +98,12 @@ public class SiMap {
                 }
             }
         }
-        int threadCount = ((CPMapParameters) parameters).threadCount;
-        statistics = new Stationary(threadCount)
-                .visitProbabilities(statistics, partition, cpMapParameters.TAU);
+        statistics = new Stationary(parameters.threadCount)
+                .visitProbabilities(statistics, partition, parameters.TAU);
         // Calculate the description length of random step
         // based visiting probabilities of nodes and groups
         double descriptionLength;
-        if(cpMapParameters.USE_RECORDED){
+        if(parameters.USE_RECORDED){
             descriptionLength = getDescriptionLength(
                     statistics.nodeRecorded, statistics.groupRecorded, partition);
         }else{
@@ -88,8 +146,8 @@ public class SiMap {
      * @param partition
      * @return re-weighted transition probability graph, negative teleport, in/out weight per nodeId
      */
-    public static SiMapStatistics reWeight(Graph graph, int[] partition){
-        SiMapStatistics statistics = new SiMapStatistics();
+    public static CPMapStatistics reWeight(Graph graph, int[] partition){
+        CPMapStatistics statistics = new CPMapStatistics();
         float[][] weights = graph.getSparseValues();
         Graph transition = graph.getTransitionProbability();
         int nodeCount = transition.getNodeCount();
@@ -106,7 +164,7 @@ public class SiMap {
             neighborGroupQueueIndex[ng] = q means group ng is a neighbor of current group g
             and it is placed in position q of groupQueue
          */
-        int[] neighborGroupQueueIndex = Util.intArray(groupRangeId, -1);
+        int[] neighborGroupQueueIndex = Util.initArray(groupRangeId, -1);
         double[] inPositive = new double[nodeCount]; // node's positive weights inside its group
         double[] inNegative = new double[nodeCount]; // node's negative weights inside its group
         double[] totalPositive = new double[nodeCount]; // node's total positive weight

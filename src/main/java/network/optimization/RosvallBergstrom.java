@@ -63,7 +63,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             MultiGraph subGraph = subGraphs[graphId];
             int nodeCount = subGraph.getNodeCount();
             if (nodeCount < 4) { // trivial all in on group
-                subPartitions[graphId] = Util.intArray(nodeCount, 0);
+                subPartitions[graphId] = Util.initArray(nodeCount, 0);
             } else {
                 subGraph.setId(graphId); // to be recognized later
                 parallelGraphs.add(subGraph);

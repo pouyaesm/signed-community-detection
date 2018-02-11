@@ -3,6 +3,8 @@ package network.core;
 import cern.colt.list.IntArrayList;
 import cern.colt.map.OpenIntIntHashMap;
 
+import java.io.File;
+
 public class Util {
     /**
      * Maximum of an integer in all given arrays
@@ -279,13 +281,28 @@ public class Util {
      * @param value
      * @return
      */
-    public static int[] intArray(int arraySize, int value){
+    public static int[] initArray(int arraySize, int value){
         int[] array = new int[arraySize];
         for(int a = 0 ; a < array.length ; a++){
             array[a] = value;
         }
         return array;
     }
+
+    /**
+     * Initialize the array with the given value
+     * @param arraySize
+     * @param value
+     * @return
+     */
+    public static double[] initArray(int arraySize, double value){
+        double[] array = new double[arraySize];
+        for(int a = 0 ; a < array.length ; a++){
+            array[a] = value;
+        }
+        return array;
+    }
+
 
     /**
      * Initialize the array with the given value
@@ -424,5 +441,83 @@ public class Util {
             array[key] = hashMap.get(key);
         }
         return array;
+    }
+
+    /**
+     * Return an array of size stepCount from start to end
+     * @param start
+     * @param end
+     * @param count
+     * @return
+     */
+    public static float[] split(float start, float end, int count){
+        float[] split = new float[count];
+        split[0] = start;
+        if(count == 1) return split;
+        float increment = (end - start) / (count - 1);
+        for(int s = 1 ; s < split.length ; s++){
+            split[s] = split[s -1] + increment;
+        }
+        return split;
+    }
+
+    /**
+     * Converts file patterns to regex for string match
+     * Copied from <a>http://www.rgagnon.com/javadetails/java-0515.html</a>
+     * @param wildcard
+     * @return
+     */
+    public static String wildcardToRegex(String wildcard){
+        StringBuilder string = new StringBuilder(wildcard.length());
+        string.append('^');
+        for (int i = 0, is = wildcard.length(); i < is; i++) {
+            char c = wildcard.charAt(i);
+            switch(c) {
+                case '*':
+                    string.append(".*");
+                    break;
+                case '?':
+                    string.append(".");
+                    break;
+                // escape special regexp-characters
+                case '(': case ')': case '[': case ']': case '$':
+                case '^': case '.': case '{': case '}': case '|':
+                case '\\':
+                    string.append("\\");
+                    string.append(c);
+                    break;
+                default:
+                    string.append(c);
+                    break;
+            }
+        }
+        string.append('$');
+        return(string.toString());
+    }
+
+    /**
+     * Returns the directory of specified address
+     * @param address
+     */
+    public static String getDirectory(String address){
+        if(new File(address).isDirectory()){
+            return address;
+        }else{
+            int end = Math.max(address.lastIndexOf("/"), address.lastIndexOf("\\"));
+            return address.substring(0, end + 1);
+        }
+    }
+
+    /**
+     * Returns the file name of specified address
+     * @param address
+     */
+    public static String getFileName(String address){
+        if(new File(address).isDirectory()){
+            return "";
+        }else{
+            int start = Math.max(address.lastIndexOf("/"), address.lastIndexOf("\\"));
+            return address.substring(start + 1);
+        }
     }
 }

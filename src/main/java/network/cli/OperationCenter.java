@@ -8,24 +8,24 @@ public class OperationCenter extends AbstractOperation {
 
     public static final String VERSION_ID = "1.0.0";
 
-    public static final String DETECT = "detect";
-    public static final String EVALUATE = "evaluate";
-    public static final String ANALYSE = "analyse";
+    public static final String MDL = "mdl";
     public static final String PRE_PROCESS = "preprocess";
 
-    public static final String INPUT = "i";
+    public static final String INPUT_GRAPH = "g";
+    public static final String INPUT_PARTITION = "p";
     public static final String OUTPUT = "o";
     public static final String UNDIRECTED = "undirected";
     public static final String RESOLUTION = "r";
-    public static final String RESOLUTION_DEFAULT = "0.05";
     public static final String ALPHA = "a";
     public static final String ALPHA_DEFAULT = "0.5";
     public static final String HELP = "h";
     public static final String VERSION = "v";
     public static final String VERBOSE = "verbose";
 
-    public static final String ERR_INPUT = "input address is not specified";
-    public static final String ERR_DIRECTORY = "output address must be a directory";
+    public static final String ERR_INPUT_GRAPH_NOT_SPECIFIED = "graph address is not specified";
+    public static final String ERR_INPUT_PARTITION_NOT_SPECIFIED = "partition address is not specified";
+    public static final String ERR_OUTPUT_DIRECTORY = "output address must be a directory";
+    public static final String ERR_OUTPUT_NOT_SPECIFIED = "output address is not specified";
 
     @Override
     public void parseOptions(String[] args) {
@@ -37,14 +37,12 @@ public class OperationCenter extends AbstractOperation {
         String[] operationArgs = Arrays.copyOfRange(args, 1, args.length);
         String operation = args[0];
         switch (operation){
-            case DETECT:
-                new Detection().parseOptions(operationArgs);
+            case MDL:
+                new MDL().parseOptions(operationArgs);
                 return;
             case PRE_PROCESS:
                 new PreProcess().parseOptions(operationArgs);
                 return;
-            case EVALUATE:
-            case ANALYSE:
             default:
         }
         try {
@@ -81,7 +79,8 @@ public class OperationCenter extends AbstractOperation {
         String message =
                 "\nCommunity Detection in Signed, Directed, and Weighted Networks @ 2018 version " + VERSION_ID +
                         "\nAvailable commands are:\n  " +
-                        DETECT + " -h\n  " + EVALUATE + " -h\n  " + ANALYSE + " -h";
+                        MDL + " -h  for community detection and evaluation\n  " +
+                        PRE_PROCESS + " -h  for graph pre-processing\n";
         System.out.println(message);
     }
 
@@ -90,7 +89,11 @@ public class OperationCenter extends AbstractOperation {
      * @return
      */
     public static Options getSharedOptions(){
-        Option input = Option.builder(OperationCenter.INPUT).longOpt("input").desc("Input address")
+        Option inputGraph = Option.builder(OperationCenter.INPUT_GRAPH)
+                .longOpt("graph").desc("Input graph address")
+                .hasArg().argName("address").type(String.class).build();
+        Option inputPartition = Option.builder(OperationCenter.INPUT_PARTITION)
+                .longOpt("partition").desc("Input partition address")
                 .hasArg().argName("address").type(String.class).build();
         Option output = Option.builder(OperationCenter.OUTPUT).longOpt("output")
                 .desc("Output address")
@@ -100,7 +103,7 @@ public class OperationCenter extends AbstractOperation {
         Option verbose = Option.builder()
                 .longOpt(VERBOSE).desc("output the progress messages").build();
         Options options = new Options()
-                .addOption(input).addOption(output)
+                .addOption(inputGraph).addOption(inputPartition).addOption(output)
                 .addOption(unDirected).addOption(verbose);
         return options;
     }

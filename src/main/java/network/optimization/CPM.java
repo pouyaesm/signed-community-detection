@@ -2,8 +2,6 @@ package network.optimization;
 
 import network.core.*;
 
-import java.util.ArrayList;
-
 import static network.core.SiGraph.NEGATIVE;
 import static network.core.SiGraph.POSITIVE;
 
@@ -21,12 +19,21 @@ public class CPM extends RosvallBergstrom {
      */
     private float resolution;
 
-    public int[] detect(MultiGraph graph, float resolution, float alpha, int refineCount){
-        MultiGraph[] graphs = {graph};
-        return detect(graphs, resolution, alpha, refineCount)[0];
+    public CPM(){
+        this.alpha = 0.5f; // same weight for negative and positive edges
     }
 
-    public int[][] detect(MultiGraph[] graphs, float resolution, float alpha, int refineCount){
+    public CPM(float resolution){
+        this.resolution = resolution;
+        alpha = 0.5f; // same weight for negative and positive edges
+    }
+
+    public int[] detect(MultiGraph graph){
+        MultiGraph[] graphs = {graph};
+        return detect(graphs)[0];
+    }
+
+    public int[][] detect(MultiGraph[] graphs){
         if(alpha < 0 || alpha > 1 || resolution < 0){
             try {
                 throw new Exception("alpha must be [0, 1], and resolution > 0");
@@ -35,7 +42,6 @@ public class CPM extends RosvallBergstrom {
             }
             return null;
         }
-        setAlpha(alpha);
         setResolution(resolution);
         for(MultiGraph graph : graphs) {
             /*
@@ -48,7 +54,7 @@ public class CPM extends RosvallBergstrom {
             }
             graph.setAttributes(nodeSizes);
         }
-        int[][] bestPartition = partition(graphs, refineCount);
+        int[][] bestPartition = partition(graphs, 0);
         // Inside a group, place each positively connected component inside a separate new group
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             bestPartition[graphId] = new ConnectedCoGroups(
@@ -67,7 +73,7 @@ public class CPM extends RosvallBergstrom {
         int queueHead = 0; // Head of queue indicating the first empty cell of queue array to insert
         // groupNeighbor[ng] = q >= 0 means group ng is a neighbor of current group g
         // and it is placed in position q of queue
-        int[] neighborGroupQIndex = Util.intArray(groupIdRange, -1);
+        int[] neighborGroupQIndex = Util.initArray(groupIdRange, -1);
         // Number of nodes in each group (each node of a group may be a folded super-node)
         int[] nodeCount = new int[groupIdRange];
         float[][] nodeAttributes = graph.getAttributes();

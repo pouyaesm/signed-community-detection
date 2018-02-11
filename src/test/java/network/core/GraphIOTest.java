@@ -1,5 +1,6 @@
 package network.core;
 
+import cern.colt.map.OpenIntIntHashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,7 +18,11 @@ public class GraphIOTest {
     }
 
     @Test
-    public void testReadFromDirectory() throws Exception{
-//        ListMatrix[] listMatrix = GraphIO.readListMatrix("testCases", false);
+    public void testReadPartition() throws Exception{
+        Graph infoMap = GraphIO.readGraph("testCases/infoMap.txt", true);
+        int[] partition = GraphIO.readPartition(
+                "testCases/infoMapPartition.txt", infoMap.getToNormal()[0]);
+        int[] expected = {1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4};
+        Assert.assertArrayEquals(expected, partition);
     }
 }

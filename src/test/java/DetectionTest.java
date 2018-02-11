@@ -4,8 +4,6 @@ import network.core.ListMatrix;
 import network.core.SiGraph;
 import network.optimization.CPM;
 import network.optimization.CPMParameters;
-import network.optimization.CPMapParameters;
-import network.signedmapequation.SiMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,8 +12,8 @@ public class DetectionTest {
     @Test
     public void testCPMDetection() throws Exception{
         SiGraph graph = new SiGraph(GraphIO.readGraph("testCases/3triads.txt", true));
-        CPM cpmDetector = new CPM();
-        int[] partition = cpmDetector.detect(graph, 0.05f, 0.5f, 0);
+        CPM cpmDetector = new CPM(0.05f);
+        int[] partition = cpmDetector.detect(graph);
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         Assert.assertArrayEquals(expectedPartition, partition);
     }
@@ -45,8 +43,8 @@ public class DetectionTest {
         graphs[0] = new SiGraph(GraphIO.readGraph("testCases/3triads.txt", true));
         graphs[1] = graphs[0].clone();
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
-        CPM cpmDetector = (CPM) new CPM().setThreadCount(2);
-        int[][] partitions = cpmDetector.detect(graphs, 0.05f, 0.5f, 0);
+        CPM cpmDetector = (CPM) new CPM(0.05f).setThreadCount(2);
+        int[][] partitions = cpmDetector.detect(graphs);
         Assert.assertArrayEquals(expectedPartition, partitions[0]);
         Assert.assertArrayEquals(expectedPartition, partitions[1]);
     }

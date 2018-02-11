@@ -29,13 +29,13 @@ public class PreProcess extends AbstractOperation{
                 showHelp();
                 return;
             }
-            String input = line.getOptionValue(OperationCenter.INPUT, "");
+            String input = line.getOptionValue(OperationCenter.INPUT_GRAPH, "");
             if(input.length() == 0){
-                throw new ParseException(OperationCenter.ERR_INPUT);
+                throw new ParseException(OperationCenter.ERR_INPUT_PARTITION_NOT_SPECIFIED);
             }
             String output = line.getOptionValue(OperationCenter.OUTPUT, "") + "/";
             if(!new File(output).isDirectory()){
-                throw new ParseException(OperationCenter.ERR_DIRECTORY);
+                throw new ParseException(OperationCenter.ERR_OUTPUT_DIRECTORY);
             }
             String[] filter = line.getOptionValues(FILTER);
             float lowerBound = filter[0] != null ? Float.parseFloat(filter[0]) : Float.NEGATIVE_INFINITY;
@@ -46,7 +46,7 @@ public class PreProcess extends AbstractOperation{
             boolean outputGraph = line.hasOption(OUTPUT_GRAPH);
             boolean isUndirected = line.hasOption(OperationCenter.UNDIRECTED);
             String outputPrefix = line.getOptionValue(OUTPUT_PREFIX, "");
-            Shared.verbose = line.hasOption(OperationCenter.VERBOSE);
+            Shared.setVerbose(line.hasOption(OperationCenter.VERBOSE));
             System.out.println(lowerBound + " " + upperBound);
             // Read the graph
             Graph graph;

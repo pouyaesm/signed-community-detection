@@ -18,22 +18,23 @@ public class SiMap {
         CPMapParameters cpMapParameters = (CPMapParameters) parameters;
         SiMapStatistics statistics = reWeight(graph, partition);
         // Teleport probabilities from each node to guarantee stationary state of G * p = p
+        int nodeIdRange = statistics.transition.getNodeMaxId() + 1;
         int nodeCount = statistics.transition.getNodeCount();
-        statistics.teleport = new double[nodeCount];
+        statistics.teleport = new double[nodeIdRange];
         if(cpMapParameters.TELEPORT_TO_NODE){
             double probability = 1.0f / nodeCount;
-            for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
+            for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
                 statistics.teleport[nodeId] = probability;
             }
         }else{
             if(cpMapParameters.USE_RECORDED){
                 double totalInWeight = Util.sum(statistics.inWeight);
-                for(int nodeId = 0 ; nodeId < nodeCount ; nodeId++){
+                for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
                     statistics.teleport[nodeId] = statistics.inWeight[nodeId] / totalInWeight;
                 }
             }else{
                 double totalOutWeight = Util.sum(statistics.outWeight);
-                for(int nodeId = 0 ; nodeId <  nodeCount; nodeId++){
+                for(int nodeId = 0 ; nodeId <  nodeIdRange; nodeId++){
                     statistics.teleport[nodeId] = statistics.outWeight[nodeId] / totalOutWeight;
                 }
             }

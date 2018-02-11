@@ -115,7 +115,7 @@ public class ParallelStationary implements Runnable {
 
     @Override
     public void run() {
-        this.multiplication = new double[transition.getRowCount()];
+        this.multiplication = new double[transition.getMaxRowId() + 1];
         for(int nodeId = fromRow; nodeId < toRow; nodeId++){
             float[] transitionTo = transition.getValues(nodeId);
             int[] neighbors = transition.getColumns(nodeId);

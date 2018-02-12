@@ -30,6 +30,7 @@ To detect a community at a specific scale (resolution)  value `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
+By sliding the resolution from 0 to 1, detected communities will be smaller and denser.
 
 ## Community evaluation
 

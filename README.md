@@ -1,8 +1,7 @@
 # Introduction 
 
-This package is a tool for community detection in signed, directed, and weighted networks.
-This is the implementation of [our paper on community detection]([https://www.nature.com/articles/srep14339])
-, which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) objective function
+This package is a tool for community detection and evaluation in signed and weighted networks.
+This is the implementation of [our paper on community detection]([https://www.nature.com/articles/srep14339]), which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) objective function
  that is optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and finds the scale parameter of constant potts model
  using the extended [Map Equation](http://www.pnas.org/content/105/4/1118) to signed networks.
 

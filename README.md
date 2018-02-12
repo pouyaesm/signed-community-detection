@@ -7,7 +7,7 @@ This is an implementation of [our paper on community detection](https://www.natu
 ## Installation
 
 Download the jar file from [here (v1.0.0, 188KB)](https://drive.google.com/file/d/1hrbxr7ipi9LkUla20ynUzJZ6glHlCEUd/view?usp=sharing).
-Start using the program by running `java -jar <filename>`.
+Start using the program by running `java -jar <filename> -h`.
 
 This project is developed as a maven project.
 
@@ -31,7 +31,7 @@ To detect a community at a specific scale (resolution)  value `0.001`, run:
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
 
-## Community Evaluation
+## Community evaluation
 
 If you want to evaluate the quality of partition `partition.txt` 
 and write the evaluation result to `mdl.txt`, run:

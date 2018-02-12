@@ -1,5 +1,4 @@
 # Introduction 
----
 
 This package is a tool for community detection in signed, directed, and weighted networks.
 This is the implementation of [our paper on community detection]([https://www.nature.com/articles/srep14339])
@@ -8,7 +7,6 @@ This is the implementation of [our paper on community detection]([https://www.na
  using the extended [Map Equation](http://www.pnas.org/content/105/4/1118) to signed networks.
 
 ## Installation
----
 
 Download the jar file from [here (v1.0.0)](https://drive.google.com/file/d/1hrbxr7ipi9LkUla20ynUzJZ6glHlCEUd/view?usp=sharing).
 Start using the program by running `java -jar <filename>`.
@@ -16,7 +14,6 @@ Start using the program by running `java -jar <filename>`.
 This project is developed as a maven project.
 
 ## Community detection
----
 
 Input graph format is required to be:
 ```
@@ -37,7 +34,6 @@ mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
 
 ## Community Evaluation
----
 
 If you want to evaluate the quality of partition `partition.txt` 
 and write the evaluation result to `mdl.txt`, run:
@@ -66,13 +62,11 @@ preprocess -h
 ```
 
 ## Performance
----
 
 This algorithm requires `O(E)` memory space and `O(ElogE)` execution time for the detection
 of communities in a signed network having `O(E)` links.
 
 ## Citation
----
 
 If you find this project useful, please cite the paper as follows:
 

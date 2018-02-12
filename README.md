@@ -2,7 +2,9 @@
 
 This package is a tool for community detection and evaluation in signed and weighted networks.
 This is an implementation of [our paper on community detection](https://www.nature.com/articles/srep14339), which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) (CPM) objective function optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and 
- uses the extended [Map Equation](http://www.pnas.org/content/105/4/1118) for signed networks to find the scale parameter of CPM.
+ uses the extended [Map Equation](http://www.pnas.org/content/105/4/1118) for signed networks to find the scale parameter of CPM. 
+ Quality of arbitrary communities can be evaluated using the Map Equation as a more robust variant of Modularity; see this [experimental](https://arxiv.org/abs/0908.1062) 
+ and [theoretical](https://arxiv.org/abs/1402.4385) results. 
 
 ## Installation
 

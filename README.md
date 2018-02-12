@@ -1,5 +1,5 @@
-### Introduction 
-==============
+# Introduction 
+---
 
 This package is a tool for community detection in signed, directed, and weighted networks.
 This is the implementation of [our paper on community detection]([https://www.nature.com/articles/srep14339])
@@ -7,7 +7,7 @@ This is the implementation of [our paper on community detection]([https://www.na
  that is optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and finds the scale parameter of constant potts model
  using the extended [Map Equation](http://www.pnas.org/content/105/4/1118) to signed networks.
 
-#### Installation
+## Installation
 ---
 
 Download the jar file from [here (v1.0.0)](https://drive.google.com/file/d/1hrbxr7ipi9LkUla20ynUzJZ6glHlCEUd/view?usp=sharing).
@@ -15,7 +15,7 @@ Start using the program by running `java -jar <filename>`.
 
 This project is developed as a maven project.
 
-#### Community detection
+## Community detection
 ---
 
 Input graph format is required to be:
@@ -36,7 +36,7 @@ To detect a community at a specific scale (resolution)  value `0.001`, run:
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
 
-#### Community Evaluation
+## Community Evaluation
 ---
 
 If you want to evaluate the quality of partition `partition.txt` 
@@ -65,13 +65,13 @@ There is a set of tools for pre-processing a graph, see the options using:
 preprocess -h
 ```
 
-#### Performance
+## Performance
 ---
 
 This algorithm requires `O(E)` memory space and `O(ElogE)` execution time for the detection
 of communities in a signed network having `O(E)` links.
 
-#### Citation
+## Citation
 ---
 
 If you find this project useful, please cite the paper as follows:

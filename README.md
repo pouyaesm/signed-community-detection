@@ -1,7 +1,7 @@
 # Introduction 
 
 This package is a tool for community detection and evaluation in signed and weighted networks.
-This is the implementation of [our paper on community detection](https://www.nature.com/articles/srep14339), which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) (CPM) objective function optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and 
+This is an implementation of [our paper on community detection](https://www.nature.com/articles/srep14339), which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) (CPM) objective function optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and 
  uses the extended [Map Equation](http://www.pnas.org/content/105/4/1118) for signed networks to find the scale parameter of CPM.
 
 ## Installation
@@ -63,6 +63,12 @@ preprocess -h
 
 This algorithm requires `O(E)` memory space and `O(ElogE)` execution time for the detection
 of communities in a signed network having `O(E)` links.
+
+## Side note
+
+This implementation differs from our main Matlab-MEX implementation that used an
+extended version of Louvain algorithm proposed by [M. Rosvall and C. T. Bergstrom](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.182.8134). In future, 
+we will try to implement one of the Louvain's recent variants to improve the performance of algorithm.
 
 ## Citation
 

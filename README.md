@@ -7,6 +7,14 @@ This is the implementation of [our paper on community detection]([https://www.na
  that is optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and finds the scale parameter of constant potts model
  using the extended [Map Equation](http://www.pnas.org/content/105/4/1118) to signed networks.
 
+#### Installation
+---
+
+Download the jar file from [here (v1.0.0)](https://drive.google.com/file/d/1hrbxr7ipi9LkUla20ynUzJZ6glHlCEUd/view?usp=sharing).
+Start using the program by running `java -jar <filename>`.
+
+This project is developed as a maven project.
+
 #### Community detection
 ---
 

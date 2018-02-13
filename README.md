@@ -32,7 +32,10 @@ To detect a community at a specific scale (resolution)  value `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
-By sliding the resolution from 0 to 1, detected communities will be smaller and denser.
+By sliding the resolution from 0 to 1, detected communities become smaller and denser.
+
+Setting r = 0 is equivalent to [Correlation Clustering](https://link.springer.com/article/10.1023/B:MACH.0000033116.57574.95)
+that aims to minimize the number of negative (positive) edges inside (between) clusters regardless of the edge density.
 
 ## Community evaluation
 

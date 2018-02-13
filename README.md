@@ -8,7 +8,7 @@ This is an implementation of [our paper on community detection](https://www.natu
 
 ## Installation
 
-Download the jar file from [here (v1.0.0, 188KB)](goo.gl/kEfwXo).
+Download the jar file from [here (v1.0.0, 188KB)](http://goo.gl/kEfwXo).
 Start using the program by running `java -jar <filename> -h`.
 
 This project is developed as a maven project.

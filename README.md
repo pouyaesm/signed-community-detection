@@ -8,7 +8,7 @@ This is an implementation of [our paper on community detection](https://www.natu
 
 ## Installation
 
-Download the jar file from [here (v1.0.0, 188KB)](http://goo.gl/kEfwXo).
+Download the jar file from [here (v1.0.0, 188kb)](http://goo.gl/kEfwXo).
 Start using the program by running `java -jar <filename> -h`.
 
 This project is developed as a maven project.
@@ -28,11 +28,17 @@ To detect the communities of `graph.txt`, run the command below:
 mdl --verbose -g graph.txt -o partition.txt
 ```
 
-To detect the communities at a specific resolution (scale) `0.001`, run:
+To detect communities at a specific resolution (scale) `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
-By sliding the resolution from 0 to 1, detected communities become smaller and denser.
+
+To detect communities at a specific range-accuracy for resolution, run:
+```
+mdl --verbose -i 0.01 0.05 -a 0.01 -g graph.txt -o partition.txt
+```
+
+Generally, by sliding the resolution from 0 to 1, detected communities become smaller and denser.
 
 Setting r = 0 is equivalent to [Correlation Clustering](https://link.springer.com/article/10.1023/B:MACH.0000033116.57574.95)
 that aims to minimize the number of negative (positive) edges inside (between) clusters regardless of the edge density.

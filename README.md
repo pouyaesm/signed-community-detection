@@ -33,7 +33,7 @@ To detect communities at a specific resolution (scale) `0.001`, run:
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
 
-To detect communities at a specific range-accuracy for resolution, run:
+To detect communities at a specific interval-accuracy of resolution, run:
 ```
 mdl --verbose -i 0.01 0.05 -a 0.01 -g graph.txt -o partition.txt
 ```

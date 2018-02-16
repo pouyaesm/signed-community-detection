@@ -64,7 +64,7 @@ Other options can be viewed by:
 mdl -h
 ```
 
-There is a set of tools for pre-processing a graph, see the options using:
+For pre-processing a graph, such as extracting its positive or negative subgraphs, run:
 
 ```
 preprocess -h

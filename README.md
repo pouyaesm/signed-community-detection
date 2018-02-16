@@ -51,8 +51,7 @@ and write the evaluation result to `mdl.txt`, run:
 ```
 mdl -g graph.txt -p partition.txt -o mdl.txt
 ```
-If a graph is directed add `--directed` parameter. Unlike evaluation,
-community detection does not support directed graphs.
+If a graph is directed add `--directed` parameter. Evaluation is based on extended Map Equation and supports directed links.
 
 If you want to evaluate a group of partitions `partition-*.txt`, run:
 

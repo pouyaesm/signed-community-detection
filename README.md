@@ -28,7 +28,7 @@ To detect the communities of `graph.txt`, run the command below:
 mdl --verbose -g graph.txt -o partition.txt
 ```
 
-To detect a community at a specific scale (resolution)  value `0.001`, run:
+To detect the communities at a specific resolution (scale) `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```

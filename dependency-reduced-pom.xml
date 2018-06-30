@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>network-community-detection</groupId>
-  <artifactId>simap</artifactId>
+  <groupId>io.github.pouyaesm</groupId>
+  <artifactId>signed-community-detection</artifactId>
   <version>1.0.0</version>
   <build>
     <plugins>
@@ -27,7 +27,7 @@
         </executions>
         <configuration>
           <minimizeJar>true</minimizeJar>
-          <finalName>simap-${project.version}</finalName>
+          <finalName>signed-community-detection-${project.version}</finalName>
           <transformers>
             <transformer>
               <mainClass>network.Main</mainClass>

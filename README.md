@@ -11,7 +11,7 @@ This is an implementation of [our paper on community detection](https://www.natu
 Download the jar file from [here (v1.0.0, 188kb)](http://goo.gl/kEfwXo).
 Start using the program by running `java -jar <filename> -h`.
 
-This project is developed as a maven project.
+This project is developed as a maven project. Run `mvn package` to build the project.
 
 ## Community detection
 

@@ -27,8 +27,9 @@ To detect the communities of `graph.txt`, run the command below:
 ```
 mdl --verbose -g graph.txt -o partition.txt
 ```
+each line of `partition.txt` will be `node_id    partition_id`.
 
-To detect communities at a specific resolution (scale) `0.001`, run:
+To detect communities at a specific resolution (or scale) `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
@@ -45,15 +46,15 @@ that aims to minimize the number of negative (positive) edges inside (between) c
 
 ## Community evaluation
 
-If you want to evaluate the quality of partition `partition.txt` 
+To evaluate the quality of an arbitrary partition `partition.txt` 
 and write the evaluation result to `mdl.txt`, run:
 
 ```
 mdl -g graph.txt -p partition.txt -o mdl.txt
 ```
-If a graph is directed add `--directed` parameter. Evaluation is based on extended Map Equation and supports directed links.
+If a graph is directed add `--directed` parameter. Evaluation is based on extended Map Equation (MDL) which supports directed links.
 
-If you want to evaluate a group of partitions `partition-*.txt`, run:
+To evaluate a group of partition files `partition-*.txt` at once, run:
 
 ```
 mdl -g graph.txt -p partition-*.txt -o mdl.txt

@@ -98,7 +98,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             // Number of unique sub groups in graphId (empty graph will have 0 sub groups)
             ArrayStatistics statistics = Statistics.array(subPartitions[subGraphId]);
             subGroupCount[subGraphId] = Math.max(1, statistics.uniqueCount);
-            if (subGroupCount[subGraphId] == 1) continue;
+            if (subGraph.isEmpty()) continue;
             int subNodeIdRange = subGraph.getNodeMaxId() + 1;
             int subGroupIdRange = statistics.maxValue + 1;
             int[] subNodeToNode = subGraph.getToRaw()[0];
@@ -110,7 +110,7 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             // Shift globalId more than necessary to avoid collision with the next group
             globalIdOffset += subGroupIdRange;
         }
-        // Put isolated nodes (in subGraphs with no edges) in isolated groups
+        // Put isolated nodes (of subGraphs with no edges) in isolated groups
         for (int nodeId = 0 ; nodeId < refinedPartition.length ; nodeId++) {
             if (refinedPartition[nodeId] < 0) {
                 refinedPartition[nodeId] = globalIdOffset++;

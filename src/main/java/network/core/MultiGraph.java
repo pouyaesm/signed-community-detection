@@ -1,9 +1,7 @@
 package network.core;
 
 import cern.colt.map.OpenIntIntHashMap;
-import cern.jet.math.Mult;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -61,18 +59,17 @@ public class MultiGraph extends Graph {
 
     /**
      * Transpose each graph type
-     * @return
      */
     @Override
     public MultiGraph transpose(boolean clone){
-        Iterator iterator = graphs.entrySet().iterator();
+        Iterator<Map.Entry<Integer, Graph>> iterator = graphs.entrySet().iterator();
         // For cloning, only keep the attributes
         MultiGraph transposedMultiGraph = clone ?
                 (MultiGraph) new MultiGraph().setAttributes(cloneAttributes()) : this;
         while (iterator.hasNext()){
-            Map.Entry graphEntry = (Map.Entry) iterator.next();
-            int typeId = (int) graphEntry.getKey();
-            Graph typeGraph = (Graph) graphEntry.getValue();
+            Map.Entry<Integer, Graph> graphEntry = iterator.next();
+            int typeId = graphEntry.getKey();
+            Graph typeGraph = graphEntry.getValue();
             // Add transpose of each type graph to multiGraph
             // If clone = false, each type replaces previous one
             transposedMultiGraph.addGraph(typeId, new Graph(typeGraph.transpose(clone)));
@@ -82,29 +79,26 @@ public class MultiGraph extends Graph {
 
     @Override
     public MultiGraph fold(int[] partition) {
-        Iterator iterator = graphs.entrySet().iterator();
+        Iterator<Map.Entry<Integer, Graph>> iterator = graphs.entrySet().iterator();
         MultiGraph foldedMultiGraph = new MultiGraph();
         ArrayList<Graph> foldedTypes = new ArrayList<>(graphs.size());
         while (iterator.hasNext()){
-            Map.Entry graphEntry = (Map.Entry) iterator.next();
-            int typeId = (int) graphEntry.getKey();
-            Graph typeGraph = (Graph) graphEntry.getValue();
+            Map.Entry<Integer, Graph> graphEntry = iterator.next();
+            int typeId = graphEntry.getKey();
+            Graph typeGraph = graphEntry.getValue();
             foldedTypes.add((Graph) typeGraph.fold(partition).setId(typeId));
         }
-        // Add transpose of each type graph to multiGraph
+        // Add each folded type graph to multiGraph
         for(Graph foldedType : foldedTypes){
             foldedMultiGraph.addGraph(foldedType.getId(), foldedType);
         }
+
         // Aggregate the attributes of multiGraph into folded multi-graph
         foldedMultiGraph.setAttributes(aggregateAttributes(partition, foldedMultiGraph));
         return foldedMultiGraph;
     }
 
 
-    /**
-     * @param partition
-     * @return
-     */
     @Override
     public MultiGraph[] decompose(int[] partition){
         // Decompose each type-graph based on the unified normalization
@@ -123,6 +117,7 @@ public class MultiGraph extends Graph {
             groupCount = decomposedType.length; // re-assigned redundantly!
         }
         // Put all types of each group into one multi-graph
+
         MultiGraph[] multiGraphs = new MultiGraph[groupCount];
         for(int m = 0 ; m < multiGraphs.length ; m++) multiGraphs[m] = new MultiGraph();
         iterator = subGraphs.entrySet().iterator();
@@ -135,12 +130,11 @@ public class MultiGraph extends Graph {
                 multiGraphs[groupId].addGraph(typeId, typeSubGraphs[groupId]);
             }
         }
-        // Normalize type-graphs of each multi-graph with a shared mapper
-        for(int m = 0 ; m < multiGraphs.length ; m++){
-            multiGraphs[m].normalizeKeepRawIds();
+        // Normalize each multi-graph with a shared mapper across its type graphs
+        for (MultiGraph multiGraph : multiGraphs) {
+            multiGraph.normalize();
         }
-        // Set attributes of multi-graph to decomposed multi-graphs
-        // Assumption: raw id of sub-multiGraphs points to the same ids as this multiGraph
+        // Set attributes of multi-graph to its decomposed sub graphs
         copyAttributesTo(multiGraphs);
         return multiGraphs;
     }
@@ -150,15 +144,15 @@ public class MultiGraph extends Graph {
      * based on row and column ids of all types combined
      * to have a shared node id among all type graphs
      */
-    public MultiGraph normalizeKeepRawIds(){
+    public MultiGraph normalize(){
         this.nodeMaxId = -1; // to be re-evaluated after normalization
         // row and column ids of all types combined
         int[][] ids = new int[2 * graphs.size()][];
-        Iterator iterator = graphs.entrySet().iterator();
+        Iterator<Map.Entry<Integer, Graph>> iterator = graphs.entrySet().iterator();
         int index = 0;
         while(iterator.hasNext()){
-            Map.Entry typeGraph = (Map.Entry) iterator.next();
-            Graph graph = (Graph) typeGraph.getValue();
+            Map.Entry<Integer, Graph> typeGraph = iterator.next();
+            Graph graph = typeGraph.getValue();
             ids[index++] = graph.getRows();
             ids[index++] = graph.getColumns();
         }
@@ -170,29 +164,69 @@ public class MultiGraph extends Graph {
         ArrayList<Graph> newGraphs = new ArrayList<>(graphs.size());
         iterator = graphs.entrySet().iterator();
         while(iterator.hasNext()){
-            Map.Entry typeGraph = (Map.Entry) iterator.next();
-            int typeId = (int) typeGraph.getKey();
-            ListMatrix normalizedList = ((Graph) typeGraph.getValue())
+            Map.Entry<Integer, Graph> typeGraph = iterator.next();
+            int typeId = typeGraph.getKey();
+            ListMatrix normalizedList = (typeGraph.getValue())
+                    .normalize(mapToNormal, null,false);
+            newGraphs.add((Graph) new Graph(normalizedList).setId(typeId));
+        }
+        for(Graph newGraph : newGraphs){
+            addGraph(newGraph.getId(), newGraph);
+        }
+        nodeCount = mapToNormal[ROW].size();
+        return this;
+    }
+
+    /**
+     * Normalize type graphs of given multiGraph
+     * based on row and column ids of all types combined
+     * to have a shared node id among all type graphs
+     */
+    public MultiGraph normalizeKeepRawIds(){
+        this.nodeMaxId = -1; // to be re-evaluated after normalization
+        // row and column ids of all types combined
+        int[][] ids = new int[2 * graphs.size()][];
+        Iterator<Map.Entry<Integer, Graph>> iterator = graphs.entrySet().iterator();
+        int index = 0;
+        while(iterator.hasNext()){
+            Map.Entry<Integer, Graph> typeGraph = iterator.next();
+            Graph graph = typeGraph.getValue();
+            ids[index++] = graph.getRows();
+            ids[index++] = graph.getColumns();
+        }
+        // Normalize ids
+        OpenIntIntHashMap[] mapToNormal = new OpenIntIntHashMap[2];
+        mapToNormal[ROW] = Util.normalizeIds(ids);
+        mapToNormal[COL] = (OpenIntIntHashMap) mapToNormal[ROW].clone();
+        // Reconstruct the type graphs based on normalized lists
+        ArrayList<Graph> newGraphs = new ArrayList<>(graphs.size());
+        iterator = graphs.entrySet().iterator();
+        while(iterator.hasNext()){
+            Map.Entry<Integer, Graph> typeGraph = iterator.next();
+            int typeId = typeGraph.getKey();
+            ListMatrix normalizedList = (typeGraph.getValue())
                     .normalizeKeepRawIds(mapToNormal, false);
             newGraphs.add((Graph) new Graph(normalizedList).setId(typeId));
         }
         for(Graph newGraph : newGraphs){
             addGraph(newGraph.getId(), newGraph);
         }
+        nodeCount = mapToNormal[ROW].size();
         return this;
     }
+
     public MultiGraph addGraph(int typeId, Graph graph){
         boolean reAdded = graphs.containsKey(typeId);
         graphs.put(typeId, graph);
         if(graph == null) return this;
-        nodeCount = Math.max(graph.getNodeCount(), nodeCount);
+        nodeCount = Math.max(nodeCount, graph.getNodeMaxId() + 1);
         isEmpty = isEmpty && graph.isEmpty();
         if(!reAdded) edgeCount += graph.getEdgeCount();
         // Take the largest id map of type graphs as the representative
-        if(getNodeMaxId() < graph.getNodeMaxId()){
+        if(nodeMaxId < graph.getNodeMaxId()){
             setToRaw(graph.getToRaw());
             setToNormal(graph.getToNormal());
-            nodeMaxId = graph.getNodeMaxId(); // raw array supports maximum node id as input
+            nodeMaxId = Math.max(nodeMaxId, graph.getNodeMaxId());
         }
         return this;
     }
@@ -215,7 +249,6 @@ public class MultiGraph extends Graph {
 
     /**
      * Return true if at least one sub-graph has edge
-     * @return
      */
     @Override
     public boolean isEmpty(){

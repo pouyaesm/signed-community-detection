@@ -2,6 +2,8 @@ package network.core;
 
 import cern.colt.map.OpenIntIntHashMap;
 
+import java.util.Arrays;
+
 public class Graph extends SparseMatrix {
     /**
      * Attributes per node
@@ -53,26 +55,19 @@ public class Graph extends SparseMatrix {
     /**
      * Clone the attributes of graph into given graphs
      * based on shared normalized node ids between the graph and input graphs array
-     * @param graphs
+     * @param subGraphs
      */
-    public void copyAttributesTo(Graph[] graphs){
+    public void copyAttributesTo(Graph[] subGraphs){
         if(!hasAttributes()) return;
-        for(int pr = 0 ; pr < graphs.length; pr++){
-            if(graphs[pr] == null || graphs[pr].isEmpty()) continue;
-            Graph graph = graphs[pr];
+        for(int pr = 0 ; pr < subGraphs.length; pr++){
+            if(subGraphs[pr] == null || subGraphs[pr].isEmpty()) continue;
+            Graph graph = subGraphs[pr];
             int subNodeIdRange = graph.getNodeMaxId() + 1;
             float[][] attributes = new float[subNodeIdRange][];
-            OpenIntIntHashMap toNormal = graph.getToNormal()[0];
             int[] toRaw = graph.getToRaw()[0];
             for(int normalizedId = 0 ; normalizedId < subNodeIdRange ; normalizedId++){
-                /*
-                    raw id of normalized nodeId of sub-graphs
-                    are mapped to the same rawId as their parent graph
-                    so their raw id can be mapped back to nodeIds of this parent
-                    using parent's maps
-                 */
                 int rawId = toRaw[normalizedId];
-                attributes[normalizedId] = getAttributes()[toNormal.get(rawId)].clone();
+                attributes[normalizedId] = getAttributes()[rawId].clone();
             }
             graph.setAttributes(attributes);
         }
@@ -101,16 +96,16 @@ public class Graph extends SparseMatrix {
      */
     public float[][] aggregateAttributes(int[] partition, Graph foldedGraph){
         if(!hasAttributes()) return null;
-        int groupIdRange = foldedGraph.getNodeMaxId() + 1;
+        int nodeIdRange = foldedGraph.getNodeMaxId() + 1;
         int attributeCount = this.attributes[0].length;
-        float[][] attributes = new float[groupIdRange][attributeCount];
+        float[][] attributes = new float[nodeIdRange][attributeCount];
         // Aggregate attribute of nodes into their group node
         // Assumption: superNodes are normalized version of their groupIds in partition
-        OpenIntIntHashMap groupToSuperGroup = foldedGraph.getToNormal()[ROW];
+        OpenIntIntHashMap partToFolded = foldedGraph.getToNormal()[ROW];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            int superGroupId = groupToSuperGroup.get(partition[nodeId]);
+            int foldedNodeId = partToFolded.get(partition[nodeId]);
             for(int attr = 0 ; attr < attributeCount ; attr++){
-                attributes[superGroupId][attr] += this.attributes[nodeId][attr];
+                attributes[foldedNodeId][attr] += this.attributes[nodeId][attr];
             }
         }
         return attributes;
@@ -206,6 +201,11 @@ public class Graph extends SparseMatrix {
         return attributes != null;
     }
 
+
+    @Override
+    public String toString() {
+        return "(N: " + this.getNodeCount() + ", E: " + this.getEdgeCount() + ")";
+    }
 
     @Override
     public Graph clone() {

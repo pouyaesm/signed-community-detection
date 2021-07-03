@@ -75,6 +75,8 @@ public class ListMatrixTest {
 
         int[] expectedToRaw = {0, 0, 0, 0, 1, 2, 3};
         Assert.assertArrayEquals(expectedToRaw, customNormalized.getToRaw()[0]);
+        // Raw id "3" is expected to be mapped to custom normal id "6" instead of "2"
+        Assert.assertEquals(6, customNormalized.getToNormal()[0].get(3));
     }
 
     /**

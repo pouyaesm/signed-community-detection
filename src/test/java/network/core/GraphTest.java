@@ -18,7 +18,7 @@ public class GraphTest {
 
     @Test
     public void testMultiGraphDecompose(){
-        int[] rows = {      1, 1, 4};
+        int[] rows = {      1, 2, 4};
         int[] columns = {   2, 3, 4};
         float[] values = {  1, -1, -1};
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true);
@@ -39,7 +39,7 @@ public class GraphTest {
     }
 
     @Test
-    public void testMultiGraphNormalize(){
+    public void testMultiGraphNormalizeKeepRawIds(){
         int[] rows = {      5,  5};
         int[] columns = {   6,  7};
         float[] values = {  1, -1};
@@ -56,5 +56,6 @@ public class GraphTest {
         Assert.assertArrayEquals(new int[]{5, 6, 7}, negative.getToRaw()[0]);
         Assert.assertEquals("Max node id is expected to be normalized too",
                 2, graph.getNodeMaxId());
+        Assert.assertEquals(3, graph.getNodeCount());
     }
 }

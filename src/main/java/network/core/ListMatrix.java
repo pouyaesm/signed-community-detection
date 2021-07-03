@@ -278,7 +278,7 @@ public class ListMatrix extends AbstractMatrix {
 
     /**
      * Normalize the row and column ids according to the given normalization vectors
-     * @param toNormal maps raw id to normalized id, it will be built if not provided
+     * @param mapToNormal maps raw id to normalized id, it will be built if not provided
      * @param mapToRaw maps normalized ids back to raw ids, it will be built if not provided
      * @param clone
      * @return
@@ -404,6 +404,7 @@ public class ListMatrix extends AbstractMatrix {
                 newNormalIds[dim].put(oldRawId, normalizedId);
             }
         }
+        normalizedList.setToNormal(newNormalIds);
         return normalizedList;
     }
 
@@ -490,8 +491,8 @@ public class ListMatrix extends AbstractMatrix {
      * Decompose the list into K lists partitioned by the input,
      * negative partitions are regarded as discarding the corresponding row or column,
      * partitions are ASSUMED to be normalized into 0...K-1,
-     * Of course pairs between different partitions will be ignored
-     * @param partition partitions[i] = k means placing i-th row and in list k
+     * Of course links between different partitions will be ignored
+     * @param partition partitions[i] = k means placing i-th row in list k
      * @return
      */
     public ListMatrix[] decompose(int[] partition){
@@ -560,30 +561,30 @@ public class ListMatrix extends AbstractMatrix {
         PartitionStatistics statistics = Statistics.partition(partition, this);
         int groupCount = statistics.groupCount;
         int validPairs = allRows.length - statistics.discardedCellCount;
-        OpenIntIntHashMap normalGroupId = Util.normalizeIds(partition);
+        OpenIntIntHashMap partToFolded = Util.normalizeIds(partition);
 
         int estimatedPairs = (int) (validPairs * (double) groupCount / partition.length);// edge count * K/N
         HashMap<Long, Float> pairs = new HashMap<Long, Float>(estimatedPairs);
-        // maps id of row/columns to their raw (unNormalized) row id
+        // maps id of row/columns to their raw (unNormalized) group id
         int[][] toRaw = new int[2][];
         toRaw[ROW] = new int[groupCount];
         toRaw[COL] = new int[groupCount];
         // raw ids to normalized row/column ids (group ids)
         OpenIntIntHashMap[] toNormal = new OpenIntIntHashMap[2];
-        toNormal[ROW] = normalGroupId;
-        toNormal[COL] = (OpenIntIntHashMap) normalGroupId.clone();
+        toNormal[ROW] = partToFolded;
+        toNormal[COL] = (OpenIntIntHashMap) partToFolded.clone();
         for(int p = 0 ; p < allRows.length ; p++){
-            int rowRawGroupId = partition[allRows[p]];
-            int columnRawGroupId = partition[allColumns[p]];
-            if(rowRawGroupId < 0 || columnRawGroupId < 0){
+            int rowPartId = partition[allRows[p]];
+            int columnPartId = partition[allColumns[p]];
+            if(rowPartId < 0 || columnPartId < 0){
                 continue; // pair is discarded by the partition
             }
-            int rowGroupId = normalGroupId.get(rowRawGroupId);
-            int columnGroupId = normalGroupId.get(columnRawGroupId);
-            long uniqueId = (long) groupCount * rowGroupId + columnGroupId;
+            int rowId = partToFolded.get(rowPartId);
+            int columnId = partToFolded.get(columnPartId);
+            long uniqueId = (long) groupCount * rowId + columnId;
             pairs.merge(uniqueId, allValues[p], Float::sum);
-            toRaw[ROW][rowGroupId] = rowRawGroupId; // row points to its un-normalized group id
-            toRaw[COL][columnGroupId] = columnRawGroupId;
+            toRaw[ROW][rowId] = rowPartId; // row points to its un-normalized group id
+            toRaw[COL][columnId] = columnPartId;
         }
         // Set aggregated links based on folded groups into simple arrays
         final int[] rows = new int[pairs.size()];
@@ -596,7 +597,7 @@ public class ListMatrix extends AbstractMatrix {
             long uniqueId = entry.getKey();
             rows[insertAt] = (int) Math.floor((double) uniqueId / groupCount);
             columns[insertAt] = (int)(uniqueId % groupCount);
-            values[insertAt] = (float) pairs.get(uniqueId);
+            values[insertAt] = pairs.get(uniqueId);
             insertAt++;
         }
         ListMatrix foldedMatrix = new ListMatrix().init(rows, columns, values, isIdShared())

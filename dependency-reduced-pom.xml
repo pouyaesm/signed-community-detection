@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.pouyaesm</groupId>
   <artifactId>signed-community-detection</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <build>
     <plugins>
       <plugin>
@@ -38,6 +38,26 @@
     </plugins>
   </build>
   <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.7.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>apiguardian-api</artifactId>
+          <groupId>org.apiguardian</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>opentest4j</artifactId>
+          <groupId>org.opentest4j</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>junit-platform-commons</artifactId>
+          <groupId>org.junit.platform</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

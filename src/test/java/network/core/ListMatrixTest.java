@@ -109,8 +109,10 @@ public class ListMatrixTest {
         ListMatrix[] matrices = new ListMatrix().init(rows, columns, values, true).decompose(partitions);
         Assert.assertArrayEquals(new int[]{1}, matrices[0].getRows());
         Assert.assertArrayEquals(new int[]{2}, matrices[0].getColumns());
+        Assert.assertArrayEquals(new float[]{1f}, matrices[0].getValues(), 0.01f);
         Assert.assertArrayEquals(new int[]{4}, matrices[1].getRows());
         Assert.assertArrayEquals(new int[]{5}, matrices[1].getColumns());
+        Assert.assertArrayEquals(new float[]{3.0f}, matrices[1].getValues(), 0.01f);
     }
 
     /**

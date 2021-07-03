@@ -1,5 +1,6 @@
 package network.optimization;
 
+import network.Shared;
 import network.core.*;
 
 import static network.core.SiGraph.NEGATIVE;
@@ -19,13 +20,19 @@ public class CPM extends RosvallBergstrom {
      */
     private float resolution;
 
+    /**
+     * Number of refinements over Louvain output by
+     * Rosvall-Bergstrom method. Leads to a more reliable detection
+     */
+    private int refineCount = 0;
+
     public CPM(){
         this.alpha = 0.5f; // same weight for negative and positive edges
     }
 
     public CPM(float resolution){
         this.resolution = resolution;
-        alpha = 0.5f; // same weight for negative and positive edges
+       this.alpha = 0.5f; // same weight for negative and positive edges
     }
 
     public int[] detect(MultiGraph graph){
@@ -42,7 +49,6 @@ public class CPM extends RosvallBergstrom {
             }
             return null;
         }
-        setResolution(resolution);
         for(MultiGraph graph : graphs) {
             /*
                 Set the number of nodes inside each node (which is 1)
@@ -54,7 +60,7 @@ public class CPM extends RosvallBergstrom {
             }
             graph.setAttributes(nodeSizes);
         }
-        int[][] bestPartition = partition(graphs, 0);
+        int[][] bestPartition = partition(graphs, this.refineCount);
         // Inside a group, place each positively connected component inside a separate new group
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             bestPartition[graphId] = new ConnectedCoGroups(
@@ -221,6 +227,7 @@ public class CPM extends RosvallBergstrom {
                 queueHead = 0; //reset queue header for next nodeId
             } // for each node of graph
         }
+//        Shared.log(" dHamiltonian(" + this.resolution + "): " + hamChange);
         return  - hamChange; // hamiltonian decrease is an improvement
     }
 
@@ -255,6 +262,7 @@ public class CPM extends RosvallBergstrom {
         return (CPM) new CPM()
                 .setResolution(resolution)
                 .setAlpha(alpha)
+                .setRefineCount(refineCount)
                 .setThreadCount(getThreadCount());
     }
 
@@ -263,6 +271,10 @@ public class CPM extends RosvallBergstrom {
         return this;
     }
 
+    public CPM setRefineCount(int refineCount){
+        this.refineCount = refineCount;
+        return this;
+    }
     public CPM setAlpha(float alpha) {
         this.alpha = alpha;
         return this;

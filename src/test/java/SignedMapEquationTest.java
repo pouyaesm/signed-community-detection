@@ -69,7 +69,7 @@ public class SignedMapEquationTest {
         int[] bestPartition = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3};
         // Link Recorded (best recommended setting)
         CPMapParameters parameters = new CPMapParameters(
-                0.15f, false, false, 1);
+                0.15f, false, false, 0, 1);
         double descriptionLength = CPMap.evaluate(graph, bestPartition, parameters);
         Assert.assertEquals(3.2469, descriptionLength, 0.0001);
         // Node UnRecorded (naive-worst setting)
@@ -89,7 +89,7 @@ public class SignedMapEquationTest {
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
         Graph graph = new Graph(listMatrix);
         CPMapParameters parameters = new CPMapParameters(
-                0.1f, false, false, 1);
+                0.1f, false, false, 0, 1);
         double minimumDescriptionLength = CPMap.evaluate(graph, partition, parameters);
         Assert.assertEquals(2.8238, minimumDescriptionLength, 0.0001);
     }

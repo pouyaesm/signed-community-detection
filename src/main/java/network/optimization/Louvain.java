@@ -87,10 +87,11 @@ abstract public class Louvain implements Runnable{
             groupToSuperGroup.put(groupId, foldedPartition[foldedNodeId]);
         }
         // Change group id of node x with the corresponding super group of group id
+        int[] superPartition = new int[partition.length];
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            partition[nodeId] = groupToSuperGroup.get(partition[nodeId]);
+            superPartition[nodeId] = groupToSuperGroup.get(partition[nodeId]);
         }
-        return partition; // detected partition
+        return superPartition; // detected partition
     }
 
     /**

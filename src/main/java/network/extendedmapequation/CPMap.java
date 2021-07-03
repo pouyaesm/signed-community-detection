@@ -3,7 +3,6 @@ package network.extendedmapequation;
 import network.Shared;
 import network.core.*;
 import network.optimization.CPM;
-import network.optimization.CPMParameters;
 import network.optimization.CPMapParameters;
 import network.optimization.ObjectiveParameters;
 
@@ -14,6 +13,7 @@ public class CPMap {
         float start = parameters.resolutionStart;
         float length = parameters.resolutionEnd - start;
         float accuracy = parameters.resolutionAccuracy;
+        int refineCount = parameters.refineCount;
         int threadCount = parameters.threadCount;
         // number of resolutions chosen from [start, start + length] to be evaluated
         // only two (4 and 5) needs to be recalculated on each solution refinement:
@@ -25,7 +25,8 @@ public class CPMap {
         float bestResolution = -1;
         int bestIndex = -1; // index of best resolution in array
         int[] bestPartition = null;
-        CPM detector = (CPM) new CPM().setThreadCount(threadCount);
+        CPM cpmDetector = (CPM) new CPM().setRefineCount(refineCount)
+                .setThreadCount(threadCount);
         SiGraph siGraph = new SiGraph(graph);
         Shared.log("CPMap started");
         while(length > accuracy){
@@ -33,14 +34,17 @@ public class CPMap {
             Shared.log("Search in [" + start + ", " + (start + length) + "]");
             for(int r = 0 ; r < mdl.length ; r++){
                 if(mdl[r] >= 0) continue; // mdl has been calculated and compared before
-                int[] partition = detector.setResolution(resolutions[r]).detect(siGraph.clone());
-                mdl[r] = CPMap.evaluate(graph, partition, parameters);
                 parameters.resolution = resolutions[r];
                 parameters.alpha = 0.5f;
-                hamil[r] = detector.evaluate(graph, partition, parameters);
+                Shared.log("---------------------------");
+                int[] partition = cpmDetector.setResolution(resolutions[r]).detect(siGraph);
+                mdl[r] = CPMap.evaluate(graph, partition, parameters);
                 Shared.log(" Resolution: " + resolutions[r]);
                 Shared.log(" MDL: " + mdl[r]);
-                Shared.log(" Hamiltonian: " + hamil[r]);
+                if(Shared.isVerbose()) {
+                    hamil[r] = cpmDetector.evaluate(graph, partition, parameters);
+                    Shared.log(" Hamiltonian(alpha="  + parameters.alpha + "): " + hamil[r]);
+                }
                 if(mdl[r] < bestMdl){
                     bestPartition = partition;
                     bestResolution = resolutions[r];

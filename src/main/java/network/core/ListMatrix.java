@@ -565,14 +565,22 @@ public class ListMatrix extends AbstractMatrix {
 
         int estimatedPairs = (int) (validPairs * (double) groupCount / partition.length);// edge count * K/N
         HashMap<Long, Float> pairs = new HashMap<Long, Float>(estimatedPairs);
-        // maps id of row/columns to their raw (unNormalized) group id
-        int[][] toRaw = new int[2][];
-        toRaw[ROW] = new int[groupCount];
-        toRaw[COL] = new int[groupCount];
         // raw ids to normalized row/column ids (group ids)
         OpenIntIntHashMap[] toNormal = new OpenIntIntHashMap[2];
         toNormal[ROW] = partToFolded;
         toNormal[COL] = (OpenIntIntHashMap) partToFolded.clone();
+        // maps id of row/columns to their raw (unNormalized) group id
+        int[][] toRaw = new int[2][];
+        toRaw[ROW] = new int[groupCount];
+        toRaw[COL] = new int[groupCount];
+        for(int i = 0 ; i < partition.length ; i++){
+            int partitionId = partition[i];
+            if(partitionId < 0) continue;
+            int normalId = partToFolded.get(partitionId);
+            toRaw[ROW][normalId] = partitionId;
+            toRaw[COL][normalId] = partitionId;
+        }
+        // aggregate link values
         for(int p = 0 ; p < allRows.length ; p++){
             int rowPartId = partition[allRows[p]];
             int columnPartId = partition[allColumns[p]];
@@ -583,9 +591,8 @@ public class ListMatrix extends AbstractMatrix {
             int columnId = partToFolded.get(columnPartId);
             long uniqueId = (long) groupCount * rowId + columnId;
             pairs.merge(uniqueId, allValues[p], Float::sum);
-            toRaw[ROW][rowId] = rowPartId; // row points to its un-normalized group id
-            toRaw[COL][columnId] = columnPartId;
         }
+
         // Set aggregated links based on folded groups into simple arrays
         final int[] rows = new int[pairs.size()];
         final int[] columns = new int[pairs.size()];

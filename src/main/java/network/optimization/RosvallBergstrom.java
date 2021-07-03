@@ -1,10 +1,7 @@
 package network.optimization;
 
 import network.Shared;
-import network.core.ArrayStatistics;
-import network.core.MultiGraph;
-import network.core.Statistics;
-import network.core.Util;
+import network.core.*;
 import cern.colt.map.OpenIntIntHashMap;
 
 import java.util.ArrayList;
@@ -38,15 +35,14 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
     protected int[][] partition(MultiGraph[] graphs, int refineCount) {
         ParallelLouvain detector = newInstance();
         Shared.log("Louvain algorithm started");
-        int[][] partition = detector.detect(graphs, 1000000);
+        int[][] partition = detector.detect(graphs, 1000);
         for (int graphId = 0; graphId < graphs.length; graphId++) {
             for (int r = 0; r < refineCount; r++) {
                 Shared.log("Refinement No. " + (r + 1) + " for graph size " + graphs[graphId].getNodeCount());
                 // Run the recursive submodule movement to improve the optimization
                 int[] refinedPartition = refine(graphs[graphId], partition[graphId]);
                 // Run single node movement upon refined partitions
-//                partition[graphId] = detector.detect(graphs[graphId], refinedPartition, 1000000);
-                partition[graphId] = refinedPartition;
+                partition[graphId] = detector.detect(graphs[graphId], refinedPartition, 1000);
             }
         }
         return partition;
@@ -74,33 +70,35 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
         if (parallelGraphs.size() > 0) {
             int[][] partitions = newInstance()
                     .setThreadCount(1) // use 1 thread since it is not effective yet
-                    .detect(parallelGraphs.toArray(new MultiGraph[0]), 1000000);
+                    .detect(parallelGraphs.toArray(new MultiGraph[0]), 1000);
             for (int processedId = 0; processedId < partitions.length; processedId++) {
                 int graphId = parallelGraphs.get(processedId).getId();
                 subPartitions[graphId] = partitions[processedId];
             }
         }
         // Recursive refinement of node groups that have been partitioned
-        int[] refinedPartition = new int[initialPartition.length];
-        int[] subGroupCount = new int[subGraphs.length];
-        // This variable is used to convert local groupId of partitions to global unique groupIds
-        int globalIdOffset = 0;
         for (int subGraphId = 0; subGraphId < subGraphs.length; subGraphId++) {
             // Number of unique sub groups in graphId (empty graph will have 0 sub groups)
             ArrayStatistics statistics = Statistics.array(subPartitions[subGraphId]);
-            subGroupCount[subGraphId] = Math.max(1, statistics.uniqueCount);
-            if (subGroupCount[subGraphId] == 1) continue; // subGraph is remained un-partitioned
-            MultiGraph subGraph = subGraphs[subGraphId];
+            int groupCount = Math.max(1, statistics.uniqueCount);
+            if (groupCount == 1) continue; // subGraph is remained un-partitioned
             // subGraph is further partitioned so refine this subGraph recursively
-            subPartitions[subGraphId] = refine(subGraph, subPartitions[subGraphId]);
-            // Number of groups after recursive refinement (may be unchanged)
-            statistics = Statistics.array(subPartitions[subGraphId]);
-            subGroupCount[subGraphId] = statistics.uniqueCount;
-            /*
-                Unique groupId of nodes
-                For example, if partition 4: {0, 1, 2, 3} is further partitioned into 0: {0, 1} and 1: {2, 3}
-                then id 6 is assigned to sub group 4-0, and id 7 to sub group 4-1
-            */
+            subPartitions[subGraphId] = refine(subGraphs[subGraphId], subPartitions[subGraphId]);
+        }
+        /*
+            Unique groupId of nodes
+            For example, if partition 4: {0, 1, 2, 3} is further partitioned into 0: {0, 1} and 1: {2, 3}
+            then id 6 is assigned to sub group 4-0, and id 7 to sub group 4-1
+        */
+        int[] refinedPartition = Util.initArray(initialPartition.length, -1);
+        int[] subGroupCount = new int[subGraphs.length];
+        int globalIdOffset = 0; // For converting local groupIds of subGraphs to global Ids
+        for (int subGraphId = 0; subGraphId < subGraphs.length; subGraphId++) {
+            MultiGraph subGraph = subGraphs[subGraphId];
+            // Number of unique sub groups in graphId (empty graph will have 0 sub groups)
+            ArrayStatistics statistics = Statistics.array(subPartitions[subGraphId]);
+            subGroupCount[subGraphId] = Math.max(1, statistics.uniqueCount);
+            if (subGroupCount[subGraphId] == 1) continue;
             int subNodeIdRange = subGraph.getNodeMaxId() + 1;
             int subGroupIdRange = statistics.maxValue + 1;
             int[] subNodeToNode = subGraph.getToRaw()[0];
@@ -112,31 +110,24 @@ abstract public class RosvallBergstrom extends ParallelLouvain {
             // Shift globalId more than necessary to avoid collision with the next group
             globalIdOffset += subGroupIdRange;
         }
+        // Put isolated nodes (in subGraphs with no edges) in isolated groups
+        for (int nodeId = 0 ; nodeId < refinedPartition.length ; nodeId++) {
+            if (refinedPartition[nodeId] < 0) {
+                refinedPartition[nodeId] = globalIdOffset++;
+            }
+        }
         // Termination condition
         int totalGroupCount = Util.sum(subGroupCount);
         if (totalGroupCount == subGraphs.length) { // no subGraph is further partitioned
             return refinedPartition;
         }
-        // Fold the refined groups and optimize the folded network starting with initialPartition
-        // Create a maps from refinedPartition to initial partition so as to
-        // connect folded super nodes -> refinedPartition -> initialPartition
-        int[] refinedToInitial = new int[graph.getNodeCount()];
-        for (int nodeId = 0; nodeId < refinedPartition.length; nodeId++) {
-            int refinedGroupId = refinedPartition[nodeId];
-            // The same assignment may be executed several times but it is okay for code simplicity
-            refinedToInitial[refinedGroupId] = initialPartition[nodeId];
-        }
+        // Fold the refined groups and optimize the folded network
         MultiGraph folded = graph.fold(refinedPartition);
-        int[] foldedNodeToRefinedPart = folded.getToRaw()[0];
+        int[] foldedNodeToRefinedPart = folded.getToRaw()[ListMatrix.ROW];
         int[] foldedInitialPartition = Util.ramp(folded.getNodeCount());
-//        int[] foldedInitialPartition = new int[folded.getNodeCount()];
-//        for (int foldedNodeId = 0; foldedNodeId < foldedInitialPartition.length; foldedNodeId++) {
-////            foldedInitialPartition[foldedNodeId] = refinedToInitial[foldedNodeToRefinedPart[foldedNodeId]];
-//            foldedInitialPartition[foldedNodeId] = foldedNodeToRefinedPart[foldedNodeId];
-//        }
         // Multiple refined partitions (multiple nodes) may go under one partition in folded graph
         // Thus, the group id of nodes must change from refined to folded
-        int[] foldedPartition = newInstance().detect(folded, foldedInitialPartition, 1000000);
+        int[] foldedPartition = newInstance().detect(folded, foldedInitialPartition, 1000);
         int[] refinedPartToFoldedPart = new int[graph.getNodeCount()];
         for (int foldedNodeId = 0; foldedNodeId < foldedPartition.length; foldedNodeId++) {
             refinedPartToFoldedPart[foldedNodeToRefinedPart[foldedNodeId]] = foldedPartition[foldedNodeId];

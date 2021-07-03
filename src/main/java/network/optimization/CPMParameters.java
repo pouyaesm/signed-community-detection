@@ -18,9 +18,4 @@ public class CPMParameters extends ObjectiveParameters {
     public CPMParameters(){
 
     }
-
-    public CPMParameters(double resolution, double alpha){
-        this.resolution = resolution;
-        this.alpha = alpha;
-    }
 }

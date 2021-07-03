@@ -32,6 +32,9 @@ public class MDL extends AbstractOperation{
     public static final String THREAD_COUNT = "thread";
     public static final String THREAD_COUNT_DEFAULT = "4";
 
+    public static final String REFINE_COUNT = "refine";
+    public static final String REFINE_COUNT_DEFAULT = "0";
+
     private static final int PARTITION_NONE = 0;
     private static final int PARTITION_ONE = 1;
     private static final int PARTITION_MANY = 2;
@@ -78,6 +81,7 @@ public class MDL extends AbstractOperation{
                 partitionMode = PARTITION_NONE;
             }
 
+            int refineCount = Integer.parseInt(line.getOptionValue(REFINE_COUNT, REFINE_COUNT_DEFAULT));
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
             boolean isDirected = line.hasOption(OperationCenter.DIRECTED);
 
@@ -101,7 +105,9 @@ public class MDL extends AbstractOperation{
             // Prepare the detector/evaluator and the given parameters
             CPMap cpmap = new CPMap();
             CPMapParameters parameters = new CPMapParameters(
-                    teleport, false, false, threadCount, resolutionStart, resolutionEnd, resolutionAccuracy);
+                    teleport, false, false,
+                    resolutionAccuracy, resolutionStart, resolutionEnd,
+                    refineCount, threadCount);
 
             // Respond to user requested mode either evaluation or detection accordingly
             int[] detectedPartition = null;
@@ -166,6 +172,11 @@ public class MDL extends AbstractOperation{
                         ", you should use the same value for comparing different partitions"
                         + ". Default value is " + TELEPORT_DEFAULT)
                 .hasArg().argName("value").type(Float.class).build();
+        Option refineCount = Option.builder()
+                .longOpt(REFINE_COUNT).desc("Number of refinements over the output of Louvain algorithm by "
+                        + "Rosvall-Bergstrom method. Leads to a more reliable detection."
+                        + " Default value is " + REFINE_COUNT_DEFAULT)
+                .hasArg().argName("refineCount").type(Float.class).build();
         Option threadCount = Option.builder()
                 .longOpt(THREAD_COUNT)
                 .desc("Number of threads used for parallel computations. Default value is "
@@ -177,6 +188,7 @@ public class MDL extends AbstractOperation{
         Options options = OperationCenter.getSharedOptions();
         options.addOption(resolution).addOption(interval)
                 .addOption(accuracy).addOption(threadCount)
+                .addOption(refineCount)
                 .addOption(help).addOption(teleport);
         return options;
     }

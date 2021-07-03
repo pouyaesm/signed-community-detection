@@ -79,16 +79,16 @@ abstract public class Louvain implements Runnable{
          * e.g. a node x is in group 10, group 10 is node 0 in folded graph
          * node 0 gets super-group 4, so node x is in group 4
          */
-        int[] superNodeToGroup = foldedGraph.getToRaw()[ROW];
-        OpenIntIntHashMap superGroup = new OpenIntIntHashMap(foldedGraph.getNodeCount());
-        for(int superNodeId = 0 ; superNodeId < foldedPartition.length ; superNodeId++){
-            // groupId of foldedGroup before being folded-normalized into a superNode
-            int groupId = superNodeToGroup[superNodeId];
-            superGroup.put(groupId, foldedPartition[superNodeId]);
+        int[] foldedToGroup = foldedGraph.getToRaw()[ROW];
+        OpenIntIntHashMap groupToSuperGroup = new OpenIntIntHashMap(foldedGraph.getNodeCount());
+        for(int foldedNodeId = 0 ; foldedNodeId < foldedPartition.length ; foldedNodeId++){
+            // groupId of folded nodes before being folded-normalized into a super node
+            int groupId = foldedToGroup[foldedNodeId];
+            groupToSuperGroup.put(groupId, foldedPartition[foldedNodeId]);
         }
-        // Change group id of node x with the corresponding superGroup of group id
+        // Change group id of node x with the corresponding super group of group id
         for(int nodeId = 0 ; nodeId < partition.length ; nodeId++){
-            partition[nodeId] = superGroup.get(partition[nodeId]);
+            partition[nodeId] = groupToSuperGroup.get(partition[nodeId]);
         }
         return partition; // detected partition
     }

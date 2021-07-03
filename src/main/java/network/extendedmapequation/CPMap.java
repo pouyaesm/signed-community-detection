@@ -3,6 +3,7 @@ package network.extendedmapequation;
 import network.Shared;
 import network.core.*;
 import network.optimization.CPM;
+import network.optimization.CPMParameters;
 import network.optimization.CPMapParameters;
 import network.optimization.ObjectiveParameters;
 
@@ -19,6 +20,7 @@ public class CPMap {
         // [1] [2] [3] -> [1] 4 [2] 5 [3]
         int count = 5;
         double[] mdl = Util.initArray(count, -1.0);// quality based on extended map equation
+        double[] hamil = Util.initArray(count, -1.0);// quality based on CPM
         double bestMdl = Double.POSITIVE_INFINITY;
         float bestResolution = -1;
         int bestIndex = -1; // index of best resolution in array
@@ -31,10 +33,14 @@ public class CPMap {
             Shared.log("Search in [" + start + ", " + (start + length) + "]");
             for(int r = 0 ; r < mdl.length ; r++){
                 if(mdl[r] >= 0) continue; // mdl has been calculated and compared before
-                int[] partition = detector.setResolution(resolutions[r]).detect(siGraph);
-                mdl[r] = CPMap.evaluate(graph, partition, CPMapParameters);
+                int[] partition = detector.setResolution(resolutions[r]).detect(siGraph.clone());
+                mdl[r] = CPMap.evaluate(graph, partition, parameters);
+                parameters.resolution = resolutions[r];
+                parameters.alpha = 0.5f;
+                hamil[r] = detector.evaluate(graph, partition, parameters);
                 Shared.log(" Resolution: " + resolutions[r]);
                 Shared.log(" MDL: " + mdl[r]);
+                Shared.log(" Hamiltonian: " + hamil[r]);
                 if(mdl[r] < bestMdl){
                     bestPartition = partition;
                     bestResolution = resolutions[r];

@@ -3,24 +3,27 @@
 This package is a tool for community detection and evaluation in signed and weighted networks.
 This is an implementation of [our paper on community detection](https://www.nature.com/articles/srep14339), which extends [Constant Potts Model](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.84.016114) (CPM) objective function optimized using [Louvain algorithm](https://arxiv.org/abs/0803.0476), and 
  uses the extended [Map Equation](http://www.pnas.org/content/105/4/1118) for signed networks to find the scale parameter of CPM. 
- Quality of arbitrary communities can be evaluated using the Map Equation as a more robust variant of Modularity; see this [experimental](https://arxiv.org/abs/0908.1062) 
+ Quality of arbitrary partitions can be evaluated using the Map Equation as a more robust variant of Modularity; see this [experimental](https://arxiv.org/abs/0908.1062) 
  and [theoretical](https://arxiv.org/abs/1402.4385) results. 
 
 ## Installation
 
-Download the jar file from [here (v1.0.0, 188kb)](http://goo.gl/kEfwXo).
+To build the jar file, install [Apache Maven](https://maven.apache.org/download.cgi),
+then run `mvn package` in the root directory of project.  
+You can also download the jar file from [here (v1.1.0, 176kb)](https://bit.ly/3qMiHJJ).
+
 Start using the program by running `java -jar <filename> -h`.
 
-This project is developed as a maven project. Run `mvn package` to build the jar file.
+
 
 ## Community detection
 
-Input graph format is required to be:
+Format of input graph should be:
 ```
 id1     id2     weight
 ...
 ```
-where each line represents a link from `id1` to `id2`; 
+where each line represents a link from node `id1` to `id2`; 
 graph is considered undirected by default.
 
 To detect the communities of `graph.txt`, run the command below:
@@ -29,7 +32,7 @@ mdl --verbose -g graph.txt -o partition.txt
 ```
 each line of `partition.txt` will be `node_id    partition_id`.
 
-To detect communities at a specific resolution (or scale) `0.001`, run:
+To detect communities at a specific resolution (a.k.a. scale) `0.001`, run:
 ```
 mdl --verbose -r 0.001 -g graph.txt -o partition.txt
 ```
@@ -74,13 +77,16 @@ preprocess -h
 ## Performance
 
 This algorithm requires `O(E)` memory space and `O(ElogE)` execution time for the detection
-of communities in a signed network having `O(E)` links.
+of communities in a signed network having `E` links.
 
 ## Side note
 
-This implementation differs from our main Matlab-MEX implementation that used an
-extended version of Louvain algorithm proposed by [M. Rosvall and C. T. Bergstrom](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.182.8134). In future, 
-we will try to implement one of the Louvain's recent variants to improve the performance of algorithm.
+This implementation reproduces the reported results of our Matlab-MEX version for three real-world networks.
+In that version, a variant of Louvain algorithm is used (proposed by [M. Rosvall and C. T. Bergstrom](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.182.8134)), 
+which basically refines the output of Louvain. 
+You can use this variant by setting the refine-count `--refine` to non-zero. For graphs with thousands of nodes or more,
+this variant gives a marginal improvement over Louvain while each refinement takes 2-2.5x the vanilla Louvain, 
+therefore refine-count is set to zero by default.
 
 ## Citation
 

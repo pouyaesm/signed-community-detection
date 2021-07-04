@@ -125,7 +125,8 @@ public class MDL extends AbstractOperation{
                 GraphIO.writeEvaluation(evaluations, output);
             } else if (specificResolution >= 0) { // community detection at a specific resolution
                 Shared.log("Resolution: " + specificResolution);
-                CPM detector = (CPM) new CPM(specificResolution).setThreadCount(threadCount);
+                CPM detector = (CPM) new CPM(specificResolution).setRefineCount(refineCount)
+                        .setThreadCount(threadCount);
                 detectedPartition = detector.detect(siGraph);
                 GraphIO.writePartition(siGraph, detectedPartition, output);
                 // Evaluate the detected partition too, if verbose is on

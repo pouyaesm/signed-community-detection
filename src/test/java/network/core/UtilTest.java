@@ -69,7 +69,7 @@ public class UtilTest {
     @Test
     public void testPermute(){
         // Each index 0...size-1 must be present
-        int[] permute = Util.permute(50);
+        int[] permute = Util.permute(50, 12345);
         Assert.assertEquals("Each index must be present one and only once",
                 50, Statistics.array(permute).uniqueCount);
     }

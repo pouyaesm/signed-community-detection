@@ -4,6 +4,7 @@ import cern.colt.list.IntArrayList;
 import cern.colt.map.OpenIntIntHashMap;
 
 import java.io.File;
+import java.util.Random;
 
 public class Util {
     /**
@@ -11,6 +12,7 @@ public class Util {
      * @param arrays
      * @return
      */
+
     public static int max(int[]...arrays) {
         int max = Integer.MIN_VALUE;
         for(int[] array : arrays) {
@@ -170,14 +172,15 @@ public class Util {
      * It is biased (good enough) but fast
      * @param size
      */
-    public static int[] permute(int size){
+    public static int[] permute(int size, int randomSeed){
         int[] permutation = new int[size];
         for(int p = 0; p < permutation.length ; p++){
             permutation[p] = p;
         }
+        Random random = randomSeed >=0 ? new Random(randomSeed) : new Random();
         // Swap index "p" with some position before (inclusive)
         for(int select, p = 1 ; p < permutation.length ; p++){
-            select = (int) (Math.random() * (p + 1));
+            select = (int) (random.nextDouble() * (p + 1));
             permutation[p] = permutation[select];
             permutation[select] = p;
         }

@@ -35,6 +35,9 @@ public class MDL extends AbstractOperation{
     public static final String REFINE_COUNT = "refine";
     public static final String REFINE_COUNT_DEFAULT = "0";
 
+    public static final String RANDOM_SEED = "seed";
+    public static final String RANDOM_SEED_DEFAULT = "-1";
+
     private static final int PARTITION_NONE = 0;
     private static final int PARTITION_ONE = 1;
     private static final int PARTITION_MANY = 2;
@@ -83,6 +86,7 @@ public class MDL extends AbstractOperation{
 
             int refineCount = Integer.parseInt(line.getOptionValue(REFINE_COUNT, REFINE_COUNT_DEFAULT));
             int threadCount = Integer.parseInt(line.getOptionValue(THREAD_COUNT, THREAD_COUNT_DEFAULT));
+            int randomSeed = Integer.parseInt(line.getOptionValue(RANDOM_SEED, RANDOM_SEED_DEFAULT));
             boolean isDirected = line.hasOption(OperationCenter.DIRECTED);
 
             float teleport = Float.parseFloat(line.getOptionValue(TELEPORT, TELEPORT_DEFAULT));
@@ -107,7 +111,7 @@ public class MDL extends AbstractOperation{
             CPMapParameters parameters = new CPMapParameters(
                     teleport, false, false,
                     resolutionAccuracy, resolutionStart, resolutionEnd,
-                    refineCount, threadCount);
+                    refineCount, threadCount, randomSeed);
 
             // Respond to user requested mode either evaluation or detection accordingly
             int[] detectedPartition = null;
@@ -125,7 +129,7 @@ public class MDL extends AbstractOperation{
                 GraphIO.writeEvaluation(evaluations, output);
             } else if (specificResolution >= 0) { // community detection at a specific resolution
                 Shared.log("Resolution: " + specificResolution);
-                CPM detector = (CPM) new CPM(specificResolution).setRefineCount(refineCount)
+                CPM detector = (CPM) new CPM().setParams(parameters)
                         .setThreadCount(threadCount);
                 detectedPartition = detector.detect(siGraph);
                 GraphIO.writePartition(siGraph, detectedPartition, output);
@@ -183,13 +187,18 @@ public class MDL extends AbstractOperation{
                 .desc("Number of threads used for parallel computations. Default value is "
                         + THREAD_COUNT_DEFAULT)
                 .hasArg().argName("thread").type(Integer.class).build();
+        Option randomSeed = Option.builder()
+                .longOpt(RANDOM_SEED)
+                .desc("Integer random seed for reproducibility (deterministic results). Default value is "
+                        + RANDOM_SEED_DEFAULT)
+                .hasArg().argName("randomSeed").type(Integer.class).build();
         Option help = Option.builder(OperationCenter.HELP)
                 .longOpt("help")
                 .desc("List of options for community detection and evaluation").build();
         Options options = OperationCenter.getSharedOptions();
         options.addOption(resolution).addOption(interval)
                 .addOption(accuracy).addOption(threadCount)
-                .addOption(refineCount)
+                .addOption(refineCount).addOption(randomSeed)
                 .addOption(help).addOption(teleport);
         return options;
     }

@@ -12,7 +12,7 @@ public class DetectionTest {
     @Test
     public void testCPMDetection() throws Exception{
         SiGraph graph = new SiGraph(GraphIO.readGraph("testCases/3triads.txt", true));
-        CPM cpmDetector = new CPM(0.05f);
+        CPM cpmDetector = new CPM().setParams(new CPMParameters().setResolution(0.05f));
         int[] partition = cpmDetector.detect(graph);
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
         Assert.assertArrayEquals(expectedPartition, partition);
@@ -26,9 +26,7 @@ public class DetectionTest {
         int[] partition = { 0, 0, 0, 2, 2, 2}; // {0, 1, 2}, {3, 4, 5}
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true).symmetrize();
         Graph graph = new Graph(listMatrix);
-        CPMParameters parameters = new CPMParameters();
-        parameters.resolution = 0.005;
-        parameters.alpha = 0.5;
+        CPMParameters parameters = new CPMParameters().setResolution(0.005);
         double hamiltonian = new CPM().evaluate(graph, partition, parameters);
         Assert.assertEquals(-3.955, hamiltonian, 0);
     }
@@ -43,7 +41,9 @@ public class DetectionTest {
         graphs[0] = new SiGraph(GraphIO.readGraph("testCases/3triads.txt", true));
         graphs[1] = graphs[0].clone();
         int[] expectedPartition = {0, 0, 0, 1, 1, 1, 2, 2, 2};
-        CPM cpmDetector = (CPM) new CPM(0.05f).setThreadCount(2);
+        CPM cpmDetector = (CPM) new CPM()
+                .setParams(new CPMParameters().setResolution(0.05f))
+                .setThreadCount(2);
         int[][] partitions = cpmDetector.detect(graphs);
         Assert.assertArrayEquals(expectedPartition, partitions[0]);
         Assert.assertArrayEquals(expectedPartition, partitions[1]);

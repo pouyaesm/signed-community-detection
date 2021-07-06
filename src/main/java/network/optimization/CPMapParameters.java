@@ -23,12 +23,6 @@ public class CPMapParameters extends CPMParameters {
     public boolean USE_RECORDED;
 
     /**
-     * Number of refinements over Louvain output by
-     * Rosvall-Bergstrom method. Leads to a more reliable detection
-     */
-    public int refineCount;
-
-    /**
      * Number of threads used for matrix multiplication
      */
     public int threadCount;
@@ -57,24 +51,26 @@ public class CPMapParameters extends CPMParameters {
      * @param threadCount
      */
     public CPMapParameters(float tau, boolean teleportToNode, boolean useRecorded,
-                           int refineCount, int threadCount){
+                           int refineCount, int threadCount, int randomSeed){
         this.TAU = tau;
         this.TELEPORT_TO_NODE = teleportToNode;
         this.USE_RECORDED = useRecorded;
         this.refineCount = refineCount;
         this.threadCount = threadCount;
+        this.randomSeed = randomSeed;
     }
 
     public CPMapParameters(float tau, boolean teleportToNode, boolean useRecorded,
                            float resolutionAccuracy, float resolutionStart, float resolutionEnd,
-                           int refineCount, int threadCount){
+                           int refineCount, int threadCount, int randomSeed){
         this.TAU = tau;
         this.TELEPORT_TO_NODE = teleportToNode;
         this.USE_RECORDED = useRecorded;
-        this.refineCount = refineCount;
-        this.threadCount = threadCount;
         this.resolutionStart = resolutionStart;
         this.resolutionEnd = resolutionEnd;
         this.resolutionAccuracy = resolutionAccuracy;
+        this.refineCount = refineCount;
+        this.threadCount = threadCount;
+        this.randomSeed = randomSeed;
     }
 }

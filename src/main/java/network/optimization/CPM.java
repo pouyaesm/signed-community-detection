@@ -1,6 +1,5 @@
 package network.optimization;
 
-import network.Shared;
 import network.core.*;
 
 import static network.core.SiGraph.NEGATIVE;
@@ -10,29 +9,11 @@ import static network.core.SiGraph.POSITIVE;
  * Graph partitioning based on Constant Potts Model objective function
  */
 public class CPM extends RosvallBergstrom {
-    /**
-     * Relative importance of positive links compared to negative links: [0, 1]
-     */
-    private float alpha;
 
-    /**
-     * Resolution parameter of CPM equation
-     */
-    private float resolution;
-
-    /**
-     * Number of refinements over Louvain output by
-     * Rosvall-Bergstrom method. Leads to a more reliable detection
-     */
-    private int refineCount = 0;
+    private CPMParameters params;
 
     public CPM(){
-        this.alpha = 0.5f; // same weight for negative and positive edges
-    }
-
-    public CPM(float resolution){
-        this.resolution = resolution;
-       this.alpha = 0.5f; // same weight for negative and positive edges
+        this.params = new CPMParameters();
     }
 
     public int[] detect(MultiGraph graph){
@@ -41,7 +22,7 @@ public class CPM extends RosvallBergstrom {
     }
 
     public int[][] detect(MultiGraph[] graphs){
-        if(alpha < 0 || alpha > 1 || resolution < 0){
+        if(params.alpha < 0 || params.alpha > 1 || params.resolution < 0){
             try {
                 throw new Exception("alpha must be [0, 1], and resolution > 0");
             } catch (Exception e) {
@@ -60,7 +41,7 @@ public class CPM extends RosvallBergstrom {
             }
             graph.setAttributes(nodeSizes);
         }
-        int[][] bestPartition = partition(graphs, this.refineCount);
+        int[][] bestPartition = partition(graphs, params.refineCount);
         // Inside a group, place each positively connected component inside a separate new group
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
             bestPartition[graphId] = new ConnectedCoGroups(
@@ -98,7 +79,7 @@ public class CPM extends RosvallBergstrom {
         // At least 1% node movement is expected to redo the merge pass
         // Also it is found that a node may alternate between two neighbors infinitely!
         while (hamImproved && movedNodes > 1 && (movedNodes / N) >= 0.01){
-            int[] permute = Util.permute(partition.length); // nodes will be visited in random order
+            int[] permute = Util.permute(partition.length, this.params.randomSeed); // nodes will be visited in random order
             hamImproved = false;
             movedNodes = 0;
             for(int k = 0 ; k < partition.length ; k++){
@@ -114,7 +95,7 @@ public class CPM extends RosvallBergstrom {
                 pPositive.Kself = pNegative.Kself = 0;
                 pPositive.NC = pNegative.NC = nodeCount[groupId];
                 pPositive.Nk = pNegative.Nk = nodeSize;
-                pPositive.resolution = this.resolution;
+                pPositive.resolution = this.params.resolution;
                 pNegative.resolution = 0; // this is described in the paper
                 // Get outward-inward neighbor groups of nodeId
                 // For outward neighbors graph is used and for inward neighbors its transpose is used
@@ -201,7 +182,7 @@ public class CPM extends RosvallBergstrom {
                     pPositive.NCp = pNegative.NCp = nodeCount[neighborGroupId] + nodeSize;
                     double pChange = localChange(pPositive);
                     double nChange = localChange(pNegative);
-                    double change = this.alpha * pChange - (1 - this.alpha) * nChange;
+                    double change = this.params.alpha * pChange - (1 - this.params.alpha) * nChange;
                     if(change < bestChange){
                         bestChange = change;
                         bestNeighborGroupId = neighborGroupId;
@@ -260,23 +241,12 @@ public class CPM extends RosvallBergstrom {
     @Override
     public CPM newInstance() {
         return (CPM) new CPM()
-                .setResolution(resolution)
-                .setAlpha(alpha)
-                .setRefineCount(refineCount)
+                .setParams(this.params.clone())
                 .setThreadCount(getThreadCount());
     }
 
-    public CPM setResolution(float resolution) {
-        this.resolution = resolution;
-        return this;
-    }
-
-    public CPM setRefineCount(int refineCount){
-        this.refineCount = refineCount;
-        return this;
-    }
-    public CPM setAlpha(float alpha) {
-        this.alpha = alpha;
+    public CPM setParams(CPMParameters params){
+        this.params = params;
         return this;
     }
 }

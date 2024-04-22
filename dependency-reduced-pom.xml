@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.pouyaesm</groupId>
   <artifactId>signed-community-detection</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <build>
     <plugins>
       <plugin>
@@ -71,5 +71,8 @@
       </exclusions>
     </dependency>
   </dependencies>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 </project>
 

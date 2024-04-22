@@ -15,7 +15,7 @@ public class PreProcess extends AbstractOperation{
     public static final String CONNECTED_COMPONENTS = "c";
     public static final String LARGEST_CC = "largest"; // largest connected component
     public static final String OUTPUT_PARTITION = "p"; // output the partition of cc or lcc
-    public static final String OUTPUT_GRAPH = "g"; // output the graph[s] of cc or lcc
+    public static final String OUTPUT_GRAPH = "n"; // output the graph[s] of cc or lcc
     public static final String OUTPUT_PREFIX = "output-prefix"; // output files prefix
 
     @Override

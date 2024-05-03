@@ -84,9 +84,7 @@ of communities in a signed network having `E` links.
 This implementation reproduces the reported results of our Matlab-MEX version for three real-world networks.
 In that version, a variant of Louvain algorithm is used (proposed by [M. Rosvall and C. T. Bergstrom](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.182.8134)), 
 which basically refines the output of Louvain. 
-You can use this variant by setting the refine-count `--refine` to non-zero. For graphs with thousands of nodes or more,
-this variant gives a marginal improvement over Louvain while each refinement takes 2-2.5x the vanilla Louvain, 
-therefore refine-count is set to zero by default.
+You can use this variant by setting the refine-count `--refine` to non-zero; we suggest 3 to 4 refinements. On large graphs, each refinement takes 2-2.5x the vanilla Louvain, therefore refine-count is set to zero by default.
 
 ## Citation
 

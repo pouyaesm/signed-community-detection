@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class OperationCenter extends AbstractOperation {
 
-    public static final String VERSION_ID = "1.0.0";
+    public static final String VERSION_ID = "1.1.3";
 
     public static final String MDL = "mdl";
     public static final String PRE_PROCESS = "preprocess";
@@ -77,7 +77,7 @@ public class OperationCenter extends AbstractOperation {
     @Override
     public void showIntroduction() {
         String message =
-                "\nCommunity Detection in Signed, Directed, and Weighted Networks @ 2018 version " + VERSION_ID +
+                "\nCommunity Detection in Signed, Directed, and Weighted Networks @ 2024 version " + VERSION_ID +
                         "\nAvailable commands are:\n  " +
                         MDL + " -h  for community detection and evaluation\n  " +
                         PRE_PROCESS + " -h  for graph pre-processing\n";

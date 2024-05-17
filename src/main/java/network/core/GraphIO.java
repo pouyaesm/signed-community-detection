@@ -62,7 +62,7 @@ public class GraphIO {
             values[p] = inputValues.get(p);
         }
         ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true);
-        Shared.log(inputRows.size() + " links has been read");
+        Shared.log(inputRows.size() + " links have been read");
         return symmetric ? listMatrix.symmetrize() : listMatrix;
     }
 

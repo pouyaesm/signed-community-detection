@@ -44,9 +44,17 @@ public class CPM extends RosvallBergstrom {
         int[][] bestPartition = partition(graphs, params.refineCount);
         // Inside a group, place each positively connected component inside a separate new group
         for(int graphId = 0 ; graphId < graphs.length ; graphId++){
-            bestPartition[graphId] = new ConnectedCoGroups(
-                    graphs[graphId].getGraph(POSITIVE), bestPartition[graphId]
+            Graph positiveSubGraph = graphs[graphId].getGraph(POSITIVE);
+            if (positiveSubGraph.isEmpty()){
+                continue;
+            }
+            int[] positivePartition = new ConnectedCoGroups(
+                    positiveSubGraph, bestPartition[graphId]
             ).find().getComponents();
+            // if largest node id have no positive link
+            // positive partition would be shorter than final partition, so we copy
+            System.arraycopy(positivePartition, 0, bestPartition[graphId], 0,
+                    positivePartition.length);
         }
         return bestPartition;
     }

@@ -53,7 +53,11 @@ public class ParallelStationary implements Runnable {
     }
 
     public double[] multiply (SparseMatrix transition, double[] distribution){
-        if(threadCount < 1) return null;
+        if(threadCount < 1){
+            return null;
+        }else if(transition.isEmpty()){
+            return distribution;
+        }
         // Parallel execution
         Thread[] threads = new Thread[threadCount];
         ParallelStationary[] multipliers = new ParallelStationary[threadCount];

@@ -24,7 +24,7 @@ public class Stationary {
      */
     public CPMapStatistics visitProbabilities(CPMapStatistics statistics, int[] partition, float tau){
         statistics.nodeRecorded = nodeRecorded(statistics.transition
-                , statistics.teleport, statistics.negativeTeleport, tau, 0.000000000000001);
+                , statistics.teleport, statistics.negativeTeleport, tau, 0.0000000001);
         statistics.nodeUnRecorded = nodeUnRecorded(statistics.transition,
                 statistics.nodeRecorded, statistics.negativeTeleport);
         statistics.groupRecorded = group(statistics, partition, tau, true);
@@ -42,9 +42,13 @@ public class Stationary {
     public double[] nodeUnRecorded(Graph transitionMatrix, double[] recorded,
                                           double[] negativeTeleport){
         double[] unrecorded = new double[recorded.length]; // unRecorded node visit probability
+        int nodeCount = transitionMatrix.getNodeCount();
+        if (nodeCount == 0) return unrecorded;
+
         // Calculate P one step further without considering the teleportation
         for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
             int[] neighbors = transitionMatrix.getColumns(nodeId);
+            if (neighbors == null) continue;
             float[] transitionToNeighbor = transitionMatrix.getValues(nodeId);
             for(int n = 0 ; n < neighbors.length ; n++){
                 unrecorded[neighbors[n]] += recorded[nodeId] * transitionToNeighbor[n];
@@ -56,7 +60,6 @@ public class Stationary {
         for(int nodeId = 0; nodeId < recorded.length ; nodeId++){
             totalNegativeTeleport += recorded[nodeId] * negativeTeleport[nodeId];
         }
-        int nodeCount = transitionMatrix.getNodeCount();
         for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
             unrecorded[nodeId] += totalNegativeTeleport / nodeCount;
         }

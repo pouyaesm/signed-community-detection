@@ -6,6 +6,8 @@ import network.optimization.CPM;
 import network.optimization.CPMapParameters;
 import network.optimization.ObjectiveParameters;
 
+import java.util.Arrays;
+
 public class CPMap {
 
     public static int[] detect(Graph graph, ObjectiveParameters CPMapParameters){
@@ -53,13 +55,13 @@ public class CPMap {
             if(bestIndex == 0) { // one interval ends was the best
                 length = resolutions[1] - start; // refine the first sub-interval
                 double secondMdl = mdl[1];
-                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                Arrays.fill(mdl, -1);
                 mdl[0] = bestMdl;
                 mdl[mdl.length - 1] = secondMdl;
             }else if (bestIndex == count - 1){
                 length = resolutions[1] - start;
                 double secondLastMdl = mdl[mdl.length - 2];
-                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                Arrays.fill(mdl, -1);
                 mdl[0] = secondLastMdl;
                 mdl[mdl.length - 1] = bestMdl;
             } else { // best one is neither of both ends
@@ -68,7 +70,7 @@ public class CPMap {
                 length = resolutions[bestIndex + 1] - start;
                 double firstMdl = mdl[bestIndex - 1];
                 double lastMdl = mdl[bestIndex + 1];
-                for (int r = 0 ; r < mdl.length ; r++) mdl[r] = -1;
+                Arrays.fill(mdl, -1);
                 // replace the three evaluated resolutions again
                 bestIndex = count / 2;
                 mdl[0] = firstMdl;
@@ -85,10 +87,9 @@ public class CPMap {
         CPMapParameters parameters = (CPMapParameters) CPMapParameters;
         CPMapStatistics statistics = reWeight(graph, partition);
         // Teleport probabilities from each node to guarantee stationary state of G * p = p
-        int nodeIdRange = statistics.transition.getNodeMaxId() + 1;
-        int nodeCount = statistics.transition.getNodeCount();
+        int nodeIdRange = statistics.inWeight.length;
         statistics.teleport = new double[nodeIdRange];
-        if(parameters.TELEPORT_TO_NODE){
+        if(parameters.TELEPORT_TO_NODE || statistics.transition.isEmpty()){
             double probability = 1.0f / nodeIdRange;
             for(int nodeId = 0 ; nodeId < nodeIdRange ; nodeId++){
                 statistics.teleport[nodeId] = probability;

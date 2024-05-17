@@ -19,6 +19,21 @@ public class DetectionTest {
     }
 
     @Test
+    public void testEdgeCases() throws Exception{
+        SiGraph isolatedLast = new SiGraph(GraphIO.readGraph("testCases/edgeCase-IsolatedLastNode.txt", false));
+        SiGraph noPositiveEdge = new SiGraph(GraphIO.readGraph("testCases/edgeCase-NoPositiveEdge.txt", false));
+        CPM cpmDetector = new CPM().setParams(new CPMParameters().setResolution(0.05f));
+
+        int[] partition = cpmDetector.detect(isolatedLast);
+        int[] expectedPartition = {0, 1, 2, 0, 0, 3};
+        Assert.assertArrayEquals(expectedPartition, partition);
+
+        int[] partition2 = cpmDetector.detect(noPositiveEdge);
+        int[] expectedPartition2 = {0, 1, 2, 3};
+        Assert.assertArrayEquals(expectedPartition2, partition2);
+    }
+
+    @Test
     public void testCPMEvaluation() {
         int[] rows = {      0, 0, 1, 3, 3, 3, 3, 3, 4};
         int[] columns = {   1, 2, 2, 0, 1, 2, 4, 5, 5};

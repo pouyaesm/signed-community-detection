@@ -48,7 +48,6 @@ public class Stationary {
         // Calculate P one step further without considering the teleportation
         for(int nodeId = 0 ; nodeId < recorded.length ; nodeId++){
             int[] neighbors = transitionMatrix.getColumns(nodeId);
-            if (neighbors == null) continue;
             float[] transitionToNeighbor = transitionMatrix.getValues(nodeId);
             for(int n = 0 ; n < neighbors.length ; n++){
                 unrecorded[neighbors[n]] += recorded[nodeId] * transitionToNeighbor[n];

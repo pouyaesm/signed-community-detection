@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class OperationCenter extends AbstractOperation {
 
-    public static final String VERSION_ID = "1.1.3";
+    public static final String VERSION_ID = "1.1.4";
 
     public static final String MDL = "mdl";
     public static final String PRE_PROCESS = "preprocess";

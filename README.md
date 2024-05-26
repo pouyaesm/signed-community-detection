@@ -10,7 +10,7 @@ This is an implementation of [our paper on community detection](https://www.natu
 
 To build the jar file, install [Apache Maven](https://maven.apache.org/download.cgi),
 then run `mvn package` in the root directory of project.  
-You can also download the jar file from [here (v1.1.3, 177kb)](https://drive.google.com/file/d/1P9i_EyMH9w0YLyhqXLrzS198KFwLXDPH/view).
+You can also download the jar file from [here (v1.1.4, 177kb)](https://drive.google.com/file/d/1t5nWJrQnUCuwQX1sEpS0hqIuDzGWfRUm/view).
 
 Start using the program by running `java -jar <filename> -h`.
 

@@ -1,7 +1,4 @@
-import network.core.Graph;
-import network.core.GraphIO;
-import network.core.ListMatrix;
-import network.core.SparseMatrix;
+import network.core.*;
 import network.optimization.CPMapParameters;
 import network.extendedmapequation.CPMap;
 import network.extendedmapequation.ParallelStationary;
@@ -92,6 +89,20 @@ public class SignedMapEquationTest {
                 0.1f, false, false, 0, 1, 12345);
         double minimumDescriptionLength = CPMap.evaluate(graph, partition, parameters);
         Assert.assertEquals(2.8238, minimumDescriptionLength, 0.0001);
+    }
+
+    @Test
+    public void testSiMapEvaluationOnNoPositiveEdges() {
+        int[] rows = {      0,  1,  2};
+        int[] columns = {   3,  3,  3};
+        float[] values = {  -1,  -1,  -1};
+        int[] partition = { 0, 1, 2, 3};
+        ListMatrix listMatrix = new ListMatrix().init(rows, columns, values, true);
+        Graph graph = new Graph(listMatrix);
+        CPMapParameters parameters = new CPMapParameters(
+                0.1f, false, false, 0, 1, 12345);
+        double minimumDescriptionLength = CPMap.evaluate(graph, partition, parameters);
+        Assert.assertEquals(0, minimumDescriptionLength, 0.0001);
     }
 
     @Test

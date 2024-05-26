@@ -169,20 +169,21 @@ public class Util {
 
     /**
      * Return a permutation of 0...size
-     * It is biased (good enough) but fast
+     * Fisher-Yates shuffle, P(each permutation) = 1/(size!)
      * @param size
      */
     public static int[] permute(int size, int randomSeed){
         int[] permutation = new int[size];
-        for(int p = 0; p < permutation.length ; p++){
+        for(int p = 0; p < size ; p++){
             permutation[p] = p;
         }
         Random random = randomSeed >=0 ? new Random(randomSeed) : new Random();
-        // Swap index "p" with some position before (inclusive)
-        for(int select, p = 1 ; p < permutation.length ; p++){
-            select = (int) (random.nextDouble() * (p + 1));
+        // Swap index "p" with some position after (inclusive)
+        for(int temp, select, p = 0 ; p < size - 1 ; p++){
+            select = p + (int) (random.nextDouble() * (size - p));
+            temp = permutation[p];
             permutation[p] = permutation[select];
-            permutation[select] = p;
+            permutation[select] = temp;
         }
         return permutation;
     }
